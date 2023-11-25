@@ -11,10 +11,10 @@ public:
 	glm::mat4 camera_trasform;
 	Shader shader;
 
-	Camera(glm::vec3 pos, glm::vec3 look);
+	Camera(glm::vec3 eye, glm::vec3 at, glm::vec3 up);
 	~Camera();
 
-	void initialize();
+	void use();
 	void change_camera();
 	void get_shader(Shader& shaders);
 };

@@ -1,6 +1,6 @@
 #include "camera.h"
 
-Camera::Camera(glm::vec3 pos, glm::vec3 look): eye(pos),at(look),up(0,1,0), camera_trasform(1.0f)
+Camera::Camera(glm::vec3 eye, glm::vec3 at,glm::vec3 up): eye(eye),at(at),up(up), camera_trasform(1.0f)
 {
 	
 }
@@ -10,17 +10,13 @@ Camera::~Camera()
 	
 }
 
-void Camera::initialize()
+void Camera::use()
 {
 	//glm::vec3 rotatedDirection = glm::normalize(glm::vec4(at - eye, 1.0f));
 	//at = eye + rotatedDirection;
 
 	camera_trasform = glm::lookAt(eye, at, up);
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, &camera_trasform[0][0]);
-
-	glm::mat4 pTransform = glm::mat4(1.0f);
-	pTransform = glm::perspective(glm::radians(60.0f), (float)1000 / (float)1000, 0.1f, 200.0f);
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
 }
 
 
