@@ -8,6 +8,7 @@ Player::Player()
 	FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
 	ReadObj(file, vertex);
 	fclose(file);
+	
 }
 
 Player::~Player()
@@ -105,29 +106,12 @@ void Player::draw()
 
 
 	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
-	int viewLoc = glGetUniformLocation(shader.ID, "view"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
-	int projLoc = glGetUniformLocation(shader.ID, "projection");
-
-	glm::vec3 cameraPos = glm::vec3(0.0f , 1.0f, 3.0f); //--- 카메라 위치
-
-	glm::vec3 cameraDirection = glm::vec3(0.0f , 0.0f, 0.0f); //--- 카메라 바라보는 방향
-	glm::vec3 rotatedDirection = glm::normalize(glm::vec4(cameraDirection - cameraPos, 1.0f));
-	cameraDirection = cameraPos + rotatedDirection;
-	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); //--- 카메라 위쪽 방향
+	
 
 	//--- 모델링 변환, 뷰잉 변환, 투영 변환 행렬을 설정한 후, 버텍스 세이더에 저장한다.
 	glm::mat4 mTransform = glm::mat4(1.0f);
 	//mTransform = glm::scale(mTransform, glm::vec3(0.5, 0.5, 0.5));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &mTransform[0][0]);
-
-	glm::mat4 vTransform = glm::mat4(1.0f);
-	vTransform = glm::lookAt(cameraPos, cameraDirection, cameraUp);
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &vTransform[0][0]);
-
-	glm::mat4 pTransform = glm::mat4(1.0f);
-	pTransform = glm::perspective(glm::radians(60.0f), (float)1000 / (float)1000, 0.1f, 200.0f);
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, &pTransform[0][0]);
-
 
 	glDrawArrays(GL_TRIANGLES, 0, vertex.size());
 	glBindVertexArray(0);

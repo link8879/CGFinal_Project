@@ -2,12 +2,15 @@
 #include <stdio.h>
 #include <iostream>
 #include "player.h"
+#include "camera.h"
+#include "shader.h"
 
 GLfloat width, height;
 GLvoid Reshape(int w, int h);
 GLvoid draw();
 Shader shader;
 Player player;
+Camera camera(glm::vec3(0,4,3),glm::vec3(0,0,0));
 
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 {
@@ -23,6 +26,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	shader.make_shaderProgram();
 	player.initialize();
 	player.get_shader(shader);
+	camera.get_shader(shader);
+	camera.initialize();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glutDisplayFunc(draw);
