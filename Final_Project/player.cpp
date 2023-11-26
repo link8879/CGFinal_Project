@@ -8,7 +8,11 @@ Player::Player()
 	FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
 	ReadObj(file, vertex);
 	fclose(file);
-	
+
+	color.x = 0.5;
+	color.y = 1.0;
+	color.z = 1.0;
+	transfom = glm::mat4(1.0f);
 }
 
 Player::~Player()
@@ -95,23 +99,12 @@ void Player::initialize()
 void Player::draw()
 {
 	glBindVertexArray(VAO);
+
 	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); //--- object Color값 전달: (1.0, 0.5, 0.3)의 색
-	glUniform3f(objColorLocation, 0.5, 1.0, 1.0);
-
-	unsigned int lightPosLocation = glGetUniformLocation(shader.ID, "lightPos"); //--- lightPos 값 전달: (0.0, 0.0, 5.0);
-	glUniform3f(lightPosLocation, 0.0, 2.0, 0.0);
-
-	unsigned int lightColorLocation = glGetUniformLocation(shader.ID, "lightColor"); //--- lightColor 값 전달: (1.0, 1.0, 1.0) 백색
-	glUniform3f(lightColorLocation, 1.0, 1.0, 1.0);
-
+	glUniform3f(objColorLocation, color.x, color.y, color.z);
 
 	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
-	
-
-	//--- 모델링 변환, 뷰잉 변환, 투영 변환 행렬을 설정한 후, 버텍스 세이더에 저장한다.
-	glm::mat4 mTransform = glm::mat4(1.0f);
-	//mTransform = glm::scale(mTransform, glm::vec3(0.5, 0.5, 0.5));
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &mTransform[0][0]);
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transfom[0][0]);
 
 	glDrawArrays(GL_TRIANGLES, 0, vertex.size());
 	glBindVertexArray(0);
