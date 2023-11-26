@@ -4,7 +4,7 @@
 #include "player.h"
 Player::Player()
 {
-	const char* objFilePath = "test_sphere.obj";
+	const char* objFilePath = "player.obj";
 	FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
 	ReadObj(file, vertex);
 	fclose(file);
@@ -104,6 +104,9 @@ void Player::draw()
 	glUniform3f(objColorLocation, color.x, color.y, color.z);
 
 	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
+
+	transfom = glm::rotate(transfom, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+	
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transfom[0][0]);
 
 	glDrawArrays(GL_TRIANGLES, 0, vertex.size());

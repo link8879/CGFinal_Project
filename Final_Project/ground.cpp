@@ -1,28 +1,32 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <vector>
 #include "point.h"
-#include "enemy.h"
-
-Enemy::Enemy()
+#include "ground.h"
+Ground::Ground()
 {
-	const char* objFilePath = "enemy.obj";
+	const char* objFilePath = "cube.obj";
 	FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
 	ReadObj(file, vertex);
 	fclose(file);
+
+	color.x = 1.0;
+	color.y = 1.0;
+	color.z = 1.0;
+	transform = glm::mat4(1.0f);
 }
 
-Enemy::~Enemy()
+Ground::~Ground()
 {
 
 }
 
-void Enemy::get_shader(Shader& shaders)
+void Ground::get_shader(Shader& shaders)
 {
 	shader = shaders;
 }
 
 
-void Enemy::ReadObj(FILE* path, std::vector<Point>& vertexes)
+void Ground::ReadObj(FILE* path, std::vector<Point>& vertexes)
 {
 	char bind[128];
 	memset(bind, 0, sizeof(bind));
@@ -72,45 +76,39 @@ void Enemy::ReadObj(FILE* path, std::vector<Point>& vertexes)
 		vertexes.push_back(Point(vertices[faces[i].z].x, vertices[faces[i].z].y, vertices[faces[i].z].z, normals[normalData[i].z].x, normals[normalData[i].z].y, normals[normalData[i].z].z));
 	}
 }
+void Ground::initialize()
+{
+	glGenVertexArrays(1, &VAO); //--- VAO 를 지정하고 할당하기
+	glBindVertexArray(VAO); //--- VAO를 바인드하기
 
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-void Enemy::draw()
+	glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(Point), vertex.data(), GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0); // Enable 필수! 사용하겠단 의미
+	glEnableVertexAttribArray(1);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, x));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, nx));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void Ground::draw()
 {
 	glBindVertexArray(VAO);
+
 	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); //--- object Color값 전달: (1.0, 0.5, 0.3)의 색
-	glUniform3f(objColorLocation, 0.5, 1.0, 1.0);
-
-	unsigned int lightPosLocation = glGetUniformLocation(shader.ID, "lightPos"); //--- lightPos 값 전달: (0.0, 0.0, 5.0);
-	glUniform3f(lightPosLocation, 0.0, 2.0, 0.0);
-
-	unsigned int lightColorLocation = glGetUniformLocation(shader.ID, "lightColor"); //--- lightColor 값 전달: (1.0, 1.0, 1.0) 백색
-	glUniform3f(lightColorLocation, 1.0, 1.0, 1.0);
-
+	glUniform3f(objColorLocation, color.x, color.y, color.z);
 
 	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
-	int viewLoc = glGetUniformLocation(shader.ID, "view"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
-	int projLoc = glGetUniformLocation(shader.ID, "projection");
 
-	glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f); //--- 카메라 위치
+	transform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, -0.5, 0.0)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0, 0.0, 10.0));
+	// transform = glm::scale(glm::mat4(1.0f), glm::vec3(10.0, 0.0, 10.0));
 
-	glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, 0.0f); //--- 카메라 바라보는 방향
-	glm::vec3 rotatedDirection = glm::normalize(glm::vec4(cameraDirection - cameraPos, 1.0f));
-	cameraDirection = cameraPos + rotatedDirection;
-	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); //--- 카메라 위쪽 방향
-
-	//--- 모델링 변환, 뷰잉 변환, 투영 변환 행렬을 설정한 후, 버텍스 세이더에 저장한다.
-	glm::mat4 mTransform = glm::mat4(1.0f);
-	//mTransform = glm::scale(mTransform, glm::vec3(0.5, 0.5, 0.5));
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &mTransform[0][0]);
-
-	glm::mat4 vTransform = glm::mat4(1.0f);
-	vTransform = glm::lookAt(cameraPos, cameraDirection, cameraUp);
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &vTransform[0][0]);
-
-	glm::mat4 pTransform = glm::mat4(1.0f);
-	pTransform = glm::perspective(glm::radians(60.0f), (float)1000 / (float)1000, 0.1f, 200.0f);
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, &pTransform[0][0]);
-
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);
 
 	glDrawArrays(GL_TRIANGLES, 0, vertex.size());
 	glBindVertexArray(0);

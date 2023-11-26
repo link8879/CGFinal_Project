@@ -5,16 +5,23 @@
 #include "camera.h"
 #include "light.h"
 #include "shader.h"
+#include "ground.h"
 
 GLfloat width, height;
 GLvoid Reshape(int w, int h);
 GLvoid draw();
 Shader shader;
 Player player;
+Ground ground;
 Camera main_camera(glm::vec3(0,2,3),glm::vec3(0,0,0),glm::vec3(0,1,0));		// 카메라 위치 바꾸려면 이것만 바꾸면 됨
 Camera minimap_camera(glm::vec3(0, 4, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));		//up벡터 메인 카메라와 다름
 Light light;
+
+GLfloat player_rotate = 0.0f;
+int player_move = 0;
+
 void update();
+void Keyboard(unsigned char key, int x, int y);
 
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 {
@@ -30,13 +37,19 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	shader.make_shaderProgram();
 	player.initialize();				//vao,vbo 설정
 	player.get_shader(shader);
+
+	ground.initialize();
+	ground.get_shader(shader);
+
 	main_camera.get_shader(shader);		
 	minimap_camera.get_shader(shader);
+
 	light.setLight(shader);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glutDisplayFunc(draw);
 	glutReshapeFunc(Reshape);
+	glutKeyboardFunc(Keyboard);
 	glutIdleFunc(update);
 	glutMainLoop();
 }
@@ -65,13 +78,16 @@ GLvoid draw()
 	main_camera.use();
 	
 	player.draw();		//메인 화면 그리기
+	ground.draw();
 
 	glViewport(width-200, height-200, 200, 200);
 	pTransform = glm::ortho(-5.0, 5.0, -5.0, 5.0, -5.0, 5.0);
 	//pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
 	minimap_camera.use();
+
 	player.draw();		//미니맵 그리기
+	ground.draw();
 
 	glutSwapBuffers(); //--- 화면에 출력하기
 }
@@ -79,4 +95,25 @@ GLvoid draw()
 void update()
 {
 	
+}
+
+void Keyboard(unsigned char key, int x, int y)
+{
+	switch (key) {
+	case'q':
+		player_rotate = 5.0f;
+		player.transfom = glm::rotate(player.transfom, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		//main_camera.camera_trasform = glm::lookAt(main_camera.eye,main_camera.at,main_camera.up) * glm::rotate(glm::mat4(1.0f), glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		//main_camera.change_camera();
+		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(glm::mat4(1.0f), glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		main_camera.change_camera();
+		break;
+
+	case 'e':
+		player_rotate = -5.0f;
+		player.transfom = glm::rotate(player.transfom, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		break;
+	}
+
+	glutPostRedisplay();
 }
