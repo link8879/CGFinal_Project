@@ -103,15 +103,18 @@ void Keyboard(unsigned char key, int x, int y)
 	case'q':
 		player_rotate = 5.0f;
 		player.transfom = glm::rotate(player.transfom, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
-		//main_camera.camera_trasform = glm::lookAt(main_camera.eye,main_camera.at,main_camera.up) * glm::rotate(glm::mat4(1.0f), glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
-		//main_camera.change_camera();
-		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(glm::mat4(1.0f), glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
-		main_camera.change_camera();
+		
+		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		main_camera.rotate_save = glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		
 		break;
 
 	case 'e':
 		player_rotate = -5.0f;
 		player.transfom = glm::rotate(player.transfom, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		
+		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		main_camera.rotate_save = glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
 		break;
 	}
 
