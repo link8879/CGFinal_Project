@@ -12,7 +12,7 @@ Player::Player()
 	color.x = 0.5;
 	color.y = 1.0;
 	color.z = 1.0;
-	transfom = glm::mat4(1.0f);
+	transform = glm::mat4(1.0f);
 }
 
 Player::~Player()
@@ -104,7 +104,7 @@ void Player::draw()
 	glUniform3f(objColorLocation, color.x, color.y, color.z);
 
 	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transfom[0][0]);
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);
 
 	glDrawArrays(GL_TRIANGLES, 0, vertex.size());
 	glBindVertexArray(0);
