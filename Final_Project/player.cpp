@@ -4,7 +4,7 @@
 #include "player.h"
 Player::Player()
 {
-	const char* objFilePath = "test_sphere.obj";
+	const char* objFilePath = "player.obj";
 	FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
 	ReadObj(file, vertex);
 	fclose(file);
