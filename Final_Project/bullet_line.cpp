@@ -1,32 +1,32 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <vector>
 #include "point.h"
-#include "player.h"
-Player::Player()
+#include "bullet_line.h"
+Bullet_line::Bullet_line()
 {
-	const char* objFilePath = "player.obj";
+	const char* objFilePath = "cube.obj";
 	FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
 	ReadObj(file, vertex);
 	fclose(file);
 
-	color.x = 0.5;
-	color.y = 1.0;
-	color.z = 1.0;
+	color.x = 1.0;
+	color.y = 0.0;
+	color.z = 0.0;
 	transform = glm::mat4(1.0f);
 }
 
-Player::~Player()
+Bullet_line::~Bullet_line()
 {
-	
+
 }
 
-void Player::get_shader(Shader& shaders)
+void Bullet_line::get_shader(Shader& shaders)
 {
 	shader = shaders;
 }
 
 
-void Player::ReadObj(FILE* path, std::vector<Point>& vertexes)
+void Bullet_line::ReadObj(FILE* path, std::vector<Point>& vertexes)
 {
 	char bind[128];
 	memset(bind, 0, sizeof(bind));
@@ -76,7 +76,7 @@ void Player::ReadObj(FILE* path, std::vector<Point>& vertexes)
 		vertexes.push_back(Point(vertices[faces[i].z].x, vertices[faces[i].z].y, vertices[faces[i].z].z, normals[normalData[i].z].x, normals[normalData[i].z].y, normals[normalData[i].z].z));
 	}
 }
-void Player::initialize()
+void Bullet_line::initialize()
 {
 	glGenVertexArrays(1, &VAO); //--- VAO 를 지정하고 할당하기
 	glBindVertexArray(VAO); //--- VAO를 바인드하기
@@ -96,7 +96,7 @@ void Player::initialize()
 	glBindVertexArray(0);
 }
 
-void Player::draw()
+void Bullet_line::draw()
 {
 	glBindVertexArray(VAO);
 
@@ -105,8 +105,10 @@ void Player::draw()
 
 	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
 
-	transform = glm::rotate(transform, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
-	
+	transform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, -2.0)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.05, 0.05, 3.5));
+	//glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, -1.5)) *
+	//glm::rotate(transform, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0)) 
+
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);
 
 	glDrawArrays(GL_TRIANGLES, 0, vertex.size());

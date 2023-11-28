@@ -3,7 +3,7 @@
 
 #include <vector>
 
-class Bullet
+class Bullet_line
 {
 public:
 	GLuint VAO = 0, VBO = 0;
@@ -12,8 +12,8 @@ public:
 	glm::vec3 color;
 	Shader shader;
 
-	~Bullet();
-	Bullet();
+	~Bullet_line();
+	Bullet_line();
 
 	void ReadObj(FILE* path, std::vector<Point>& vertexes);
 	void draw();
