@@ -11,7 +11,9 @@ public:
 	glm::vec3 color;
 	Shader shader;
 	glm::vec3 init_location;
+	glm::vec3 size;
 	float t = 0;
+	int hp;
 
 	~Enemy();
 	Enemy(Shader& shaders);

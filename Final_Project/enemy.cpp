@@ -12,19 +12,41 @@ Enemy::Enemy(Shader& shaders) {
 	ReadObj(file, vertex);
 	fclose(file);
 
-	color.x = 0.5;
-	color.y = 0.5;
-	color.z = 1.0;
 	shader = shaders;
 	std::mt19937 generator(std::random_device{}());
 
-	std::uniform_real_distribution<float> distribution_x(-2, 2.0);
-	std::uniform_real_distribution<float> distribution_z(-2, 2.0);
+	std::uniform_real_distribution<float> distribution_x(-5, 5.0);
+	std::uniform_real_distribution<float> distribution_z(-5, 5.0);
+	std::uniform_int_distribution<int> rand_hp(1, 3);
+
+	hp = rand_hp(generator);
+
+  if(hp == 1) {
+	  color.x = 0.5;
+	  color.y = 0.5;
+	  color.z = 1.0;
+
+	  size = glm::vec3(0.35, 0.35, 0.35);
+  }
+  else if(hp == 2) {
+	  color.x = 0;
+	  color.y = 1;
+	  color.z = 0.5;
+
+	  size = glm::vec3(0.75, 0.75, 0.75);
+  }
+  else if(hp == 3) {
+	  color.x = 1;
+	  color.y = 0.4;
+	  color.z = 0.6;
+	  size = glm::vec3(1, 1, 1);
+  }
+
 	float random_x = distribution_x(generator);
 	float random_z = distribution_z(generator);
-	transform = glm::translate(glm::mat4(1.0f), glm::vec3(random_x, 0, random_z)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));
 
 	init_location = glm::vec3(random_x, 0, random_z);
+	transform = glm::translate(glm::mat4(1.0f), glm::vec3(random_x, 0, random_z)) *glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));
 
 	glGenVertexArrays(1, &VAO); //--- VAO 를 지정하고 할당하기
 	glBindVertexArray(VAO); //--- VAO를 바인드하기
@@ -112,12 +134,15 @@ void Enemy::draw() {
 }
 
 void Enemy::update(float alpha) {
+
+
+
 	glm::vec3 startPosition = init_location;
 	glm::vec3 endPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	glm::vec3 currentPosition = glm::mix(startPosition, endPosition, alpha);
 
-	transform = glm::translate(glm::mat4(1.0f), currentPosition);
+	transform = glm::translate(glm::mat4(1.0), currentPosition) * glm::scale(glm::mat4(1.0f), size);
 }
 
 

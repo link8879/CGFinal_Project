@@ -36,12 +36,13 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	main_camera.get_shader(shader);		
 	minimap_camera.get_shader(shader);
 	light.setLight(shader);
+	enemies.reserve(50);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glutDisplayFunc(draw);
 	glutReshapeFunc(Reshape);
 	glutTimerFunc(5000, spawn_enemy, 1);
-	glutTimerFunc(100, update, 1);
+	glutTimerFunc(1, update, 1);
 	glutMainLoop();
 }
 
@@ -75,8 +76,8 @@ GLvoid draw()
 	pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
 	main_camera.use();
-	
-	player.draw();		//메인 화면 그리기
+	//메인 화면 그리기
+	player.draw();		
 
   for(auto &enemy: enemies) {
 	  enemy.draw();
@@ -87,28 +88,32 @@ GLvoid draw()
 	//pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
 	minimap_camera.use();
-	player.draw();		//미니맵 그리기
+	//미니맵 그리기
+  player.draw();		
+
 	for (auto& enemy : enemies) {
 		enemy.draw();
 	}
-
-	std::cout << enemies.size();
 
 	glutSwapBuffers(); //--- 화면에 출력하기
 }
 
 void update(int value)
 {
-  
-	for(auto& enemy: enemies) {
-		enemy.t += 0.01;
-		enemy.update(enemy.t);
 
+	static int lastTime = glutGet(GLUT_ELAPSED_TIME);
+	int currentTime = glutGet(GLUT_ELAPSED_TIME);
+	float deltaTime = (currentTime - lastTime) / 1000.0f; // 초 단위로 변환
+	lastTime = currentTime;
+
+	for(auto& enemy: enemies) {
+		enemy.t += deltaTime * 0.1;
+		enemy.update(enemy.t);
 	if(enemy.t >= 1.0) {
 		enemy.t = 1;
 	}
 	}
 
 	glutPostRedisplay();
-	glutTimerFunc(100, update, 1);
+	glutTimerFunc(1, update, 1);
 }
