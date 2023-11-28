@@ -2,39 +2,63 @@
 #include <stdio.h>
 #include <iostream>
 #include "player.h"
+#include "bullet.h"
+#include "bullet_line.h"
 #include "camera.h"
 #include "light.h"
 #include "shader.h"
 #include "enemy.h"
+#include "ground.h"
 
 GLfloat width, height;
 GLvoid Reshape(int w, int h);
 GLvoid draw();
 Shader shader;
 Player player;
-Camera main_camera(glm::vec3(0,2,3),glm::vec3(0,0,0),glm::vec3(0,1,0));		// Ä«¸Þ¶ó À§Ä¡ ¹Ù²Ù·Á¸é ÀÌ°Í¸¸ ¹Ù²Ù¸é µÊ
-Camera minimap_camera(glm::vec3(0, 4, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));		//upº¤ÅÍ ¸ÞÀÎ Ä«¸Þ¶ó¿Í ´Ù¸§
+Ground ground;
+Bullet_line bullet_line;
+Bullet bullet;
+Camera main_camera(glm::vec3(0,2,3),glm::vec3(0,0,0),glm::vec3(0,1,0));		// Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½Ä¡ ï¿½Ù²Ù·ï¿½ï¿½ï¿½ ï¿½Ì°Í¸ï¿½ ï¿½Ù²Ù¸ï¿½ ï¿½ï¿½
+Camera minimap_camera(glm::vec3(0, 4, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));		//upï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½ï¿½ ï¿½Ù¸ï¿½
 Light light;
 std::vector<Enemy> enemies;
 void update(int value);
 GLvoid spawn_enemy(int value);
 
-void main(int argc, char** argv) //--- À©µµ¿ì Ãâ·ÂÇÏ°í ÄÝ¹éÇÔ¼ö ¼³Á¤
+GLfloat player_rotate = 0.0f;
+GLfloat bullet_angle = 0.0f;
+int player_move = 0;
+bool bang = false;
+
+void update();
+void Keyboard(unsigned char key, int x, int y);
+void bullet_timer(int value);
+
+void main(int argc, char** argv) //--- ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½Ý¹ï¿½ï¿½Ô¼ï¿½ ï¿½ï¿½ï¿½ï¿½
 {
-	//--- À©µµ¿ì »ý¼ºÇÏ±â
+	//--- ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowPosition(200, 30);
 	glutInitWindowSize(1000, 1000);
 	glutCreateWindow("Example1");
-	//--- GLEW ÃÊ±âÈ­ÇÏ±â
+	//--- GLEW ï¿½Ê±ï¿½È­ï¿½Ï±ï¿½
 	glewExperimental = GL_TRUE;
 	glewInit();
 	shader.make_shaderProgram();
-	player.initialize();				//vao,vbo ¼³Á¤
+	player.initialize();				//vao,vbo ï¿½ï¿½ï¿½ï¿½
 	player.get_shader(shader);
+
+	ground.initialize();
+	ground.get_shader(shader);
+	bullet_line.initialize();
+	bullet_line.get_shader(shader);
+	bullet.initialize();
+	bullet.get_shader(shader);
+
 	main_camera.get_shader(shader);		
 	minimap_camera.get_shader(shader);
+
 	light.setLight(shader);
 	enemies.reserve(50);
 	glEnable(GL_DEPTH_TEST);
@@ -43,6 +67,7 @@ void main(int argc, char** argv) //--- À©µµ¿ì Ãâ·ÂÇÏ°í ÄÝ¹éÇÔ¼ö ¼³Á¤
 	glutReshapeFunc(Reshape);
 	glutTimerFunc(5000, spawn_enemy, 1);
 	glutTimerFunc(1, update, 1);
+	glutKeyboardFunc(Keyboard);
 	glutMainLoop();
 }
 
@@ -54,7 +79,7 @@ GLvoid spawn_enemy(int value) {
 	glutTimerFunc(5000, spawn_enemy, 1);
 }
 
-GLvoid Reshape(int w, int h) //--- ÄÝ¹é ÇÔ¼ö: ´Ù½Ã ±×¸®±â ÄÝ¹é ÇÔ¼ö
+GLvoid Reshape(int w, int h) //--- ï¿½Ý¹ï¿½ ï¿½Ô¼ï¿½: ï¿½Ù½ï¿½ ï¿½×¸ï¿½ï¿½ï¿½ ï¿½Ý¹ï¿½ ï¿½Ô¼ï¿½
 {
 	width = w;
 	height = h;
@@ -76,26 +101,33 @@ GLvoid draw()
 	pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
 	main_camera.use();
-	//¸ÞÀÎ È­¸é ±×¸®±â
+	//ï¿½ï¿½ï¿½ï¿½ È­ï¿½ï¿½ ï¿½×¸ï¿½ï¿½ï¿½
 	player.draw();		
 
   for(auto &enemy: enemies) {
 	  enemy.draw();
   }
+	
+
+	bullet.draw();
+	bullet_line.draw();
+	ground.draw();
 
 	glViewport(width-200, height-200, 200, 200);
 	pTransform = glm::ortho(-5.0, 5.0, -5.0, 5.0, -5.0, 5.0);
 	//pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
 	minimap_camera.use();
-	//¹Ì´Ï¸Ê ±×¸®±â
+	//ï¿½Ì´Ï¸ï¿½ ï¿½×¸ï¿½ï¿½ï¿½
   player.draw();		
 
 	for (auto& enemy : enemies) {
 		enemy.draw();
 	}
 
-	glutSwapBuffers(); //--- È­¸é¿¡ Ãâ·ÂÇÏ±â
+	ground.draw();
+
+	glutSwapBuffers(); //--- È­ï¿½é¿¡ ï¿½ï¿½ï¿½ï¿½Ï±ï¿½
 }
 
 void update(int value)
@@ -103,7 +135,7 @@ void update(int value)
 
 	static int lastTime = glutGet(GLUT_ELAPSED_TIME);
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
-	float deltaTime = (currentTime - lastTime) / 1000.0f; // ÃÊ ´ÜÀ§·Î º¯È¯
+	float deltaTime = (currentTime - lastTime) / 1000.0f; // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¯
 	lastTime = currentTime;
 
 	for(auto& enemy: enemies) {
@@ -116,4 +148,58 @@ void update(int value)
 
 	glutPostRedisplay();
 	glutTimerFunc(1, update, 1);
+	
+}
+
+void Keyboard(unsigned char key, int x, int y)
+{
+	switch (key) {
+	case'q':
+		player_rotate = 5.0f;
+		bullet_angle += player_rotate;
+
+		player.transform = glm::rotate(player.transform, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
+
+		bullet_line.transform = glm::rotate(bullet_line.transform, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		
+		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		main_camera.rotate_save = glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		break;
+
+	case 'e':
+		player_rotate = -5.0f;
+		bullet_angle -= player_rotate;
+
+		player.transform = glm::rotate(player.transform, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
+
+		bullet_line.transform = glm::rotate(bullet_line.transform, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		
+		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		main_camera.rotate_save = glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		break;
+
+	case 32:
+		glutTimerFunc(100, bullet_timer, 1);
+		bang = true;
+		break;
+	}
+
+	glutPostRedisplay();
+}
+
+void bullet_timer(int value)
+{
+	GLfloat x = 0.0f;
+	GLfloat y = 0.0f;
+
+	if (bang)
+	{
+		bullet.transform = glm::translate(bullet.transform, glm::vec3(cos(bullet_angle) * x, sin(bullet_angle) * y, 0.0f));
+
+		x += 0.01;
+		y += 0.01;
+
+		glutPostRedisplay();
+		glutTimerFunc(100, bullet_timer, 1);
+	}
 }

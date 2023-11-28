@@ -1,11 +1,11 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <vector>
 #include "point.h"
-#include "player.h"
-Player::Player()
+#include "bullet.h"
+Bullet::Bullet()
 {
-	const char* objFilePath = "player.obj";
-	FILE* file = fopen(objFilePath, "r"); // "r"ï¿½ï¿½ ï¿½Ð±ï¿½ ï¿½ï¿½å¸¦ ï¿½ï¿½Å¸ï¿½ï¿½ï¿½Ï´ï¿½.
+	const char* objFilePath = "bullet.obj";
+	FILE* file = fopen(objFilePath, "r"); // "r"Àº ÀÐ±â ¸ðµå¸¦ ³ªÅ¸³À´Ï´Ù.
 	ReadObj(file, vertex);
 	fclose(file);
 
@@ -15,18 +15,18 @@ Player::Player()
 	transform = glm::mat4(1.0f);
 }
 
-Player::~Player()
+Bullet::~Bullet()
 {
-	
+
 }
 
-void Player::get_shader(Shader& shaders)
+void Bullet::get_shader(Shader& shaders)
 {
 	shader = shaders;
 }
 
 
-void Player::ReadObj(FILE* path, std::vector<Point>& vertexes)
+void Bullet::ReadObj(FILE* path, std::vector<Point>& vertexes)
 {
 	char bind[128];
 	memset(bind, 0, sizeof(bind));
@@ -69,24 +69,24 @@ void Player::ReadObj(FILE* path, std::vector<Point>& vertexes)
 		}
 	}
 
-	// ï¿½Ê¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ð¾ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½î¿¡ ï¿½ï¿½ï¿½ï¿½
+	// ÇÊ¿äÇÑ °æ¿ì ÀÐ¾î¿Â °ªÀ» Àü¿ª º¯¼ö µî¿¡ ÀúÀå
 	for (int i = 0; i < faces.size(); ++i) {
 		vertexes.push_back(Point(vertices[faces[i].x].x, vertices[faces[i].x].y, vertices[faces[i].x].z, normals[normalData[i].x].x, normals[normalData[i].x].y, normals[normalData[i].x].z));
 		vertexes.push_back(Point(vertices[faces[i].y].x, vertices[faces[i].y].y, vertices[faces[i].y].z, normals[normalData[i].y].x, normals[normalData[i].y].y, normals[normalData[i].y].z));
 		vertexes.push_back(Point(vertices[faces[i].z].x, vertices[faces[i].z].y, vertices[faces[i].z].z, normals[normalData[i].z].x, normals[normalData[i].z].y, normals[normalData[i].z].z));
 	}
 }
-void Player::initialize()
+void Bullet::initialize()
 {
-	glGenVertexArrays(1, &VAO); //--- VAO ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½Ò´ï¿½ï¿½Ï±ï¿½
-	glBindVertexArray(VAO); //--- VAOï¿½ï¿½ ï¿½ï¿½ï¿½Îµï¿½ï¿½Ï±ï¿½
+	glGenVertexArrays(1, &VAO); //--- VAO ¸¦ ÁöÁ¤ÇÏ°í ÇÒ´çÇÏ±â
+	glBindVertexArray(VAO); //--- VAO¸¦ ¹ÙÀÎµåÇÏ±â
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(Point), vertex.data(), GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(0); // Enable ï¿½Ê¼ï¿½! ï¿½ï¿½ï¿½ï¿½Ï°Ú´ï¿½ ï¿½Ç¹ï¿½
+	glEnableVertexAttribArray(0); // Enable ÇÊ¼ö! »ç¿ëÇÏ°Ú´Ü ÀÇ¹Ì
 	glEnableVertexAttribArray(1);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, x));
@@ -96,17 +96,17 @@ void Player::initialize()
 	glBindVertexArray(0);
 }
 
-void Player::draw()
+void Bullet::draw()
 {
 	glBindVertexArray(VAO);
 
-	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); //--- object Colorï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: (1.0, 0.5, 0.3)ï¿½ï¿½ ï¿½ï¿½
+	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); //--- object Color°ª Àü´Þ: (1.0, 0.5, 0.3)ÀÇ »ö
 	glUniform3f(objColorLocation, color.x, color.y, color.z);
 
-	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- ï¿½ï¿½ï¿½Ø½ï¿½ ï¿½ï¿½ï¿½Ì´ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¯ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Þ¾Æ¿Â´ï¿½.
+	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- ¹öÅØ½º ¼¼ÀÌ´õ¿¡¼­ ºäÀ× º¯È¯ Çà·Ä º¯¼ö°ªÀ» ¹Þ¾Æ¿Â´Ù.
 
-	transform = glm::rotate(transform, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
-	
+	transform = glm::scale(transform, glm::vec3(0.25, 0.25, 0.25));
+
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);
 
 	glDrawArrays(GL_TRIANGLES, 0, vertex.size());
