@@ -39,9 +39,6 @@
     <ClCompile Include="bullet.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="bullet_line.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="player.h">
@@ -68,7 +65,10 @@
     <ClInclude Include="bullet.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="bullet_line.h">
+    <ClInclude Include="aabb.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="collision.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

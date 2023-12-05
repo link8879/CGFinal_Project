@@ -3,12 +3,15 @@
 #include <iostream>
 #include "player.h"
 #include "bullet.h"
-#include "bullet_line.h"
 #include "camera.h"
 #include "light.h"
 #include "shader.h"
 #include "enemy.h"
 #include "ground.h"
+#include "aabb.h"
+#include "collision.h"
+#include <algorithm>
+#include <vector>
 
 GLfloat width, height;
 GLvoid Reshape(int w, int h);
@@ -16,10 +19,9 @@ GLvoid draw();
 Shader shader;
 Player player;
 Ground ground;
-Bullet_line bullet_line;
-Bullet bullet;
-Camera main_camera(glm::vec3(0,2,3),glm::vec3(0,0,0),glm::vec3(0,1,0));		// ī�޶� ��ġ �ٲٷ��� �̰͸� �ٲٸ� ��
-Camera minimap_camera(glm::vec3(0, 4, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));		//up���� ���� ī�޶�� �ٸ�
+std::vector<Bullet> bullets;
+Camera main_camera(glm::vec3(0,2,3),glm::vec3(0,0,0),glm::vec3(0,1,0));
+Camera minimap_camera(glm::vec3(0, 4, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));
 Light light;
 std::vector<Enemy> enemies;
 void update(int value);
@@ -34,27 +36,22 @@ void update();
 void Keyboard(unsigned char key, int x, int y);
 void bullet_timer(int value);
 
-void main(int argc, char** argv) //--- ������ ����ϰ� �ݹ��Լ� ����
+void main(int argc, char** argv)
 {
-	//--- ������ �����ϱ�
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowPosition(200, 30);
 	glutInitWindowSize(1000, 1000);
 	glutCreateWindow("Example1");
-	//--- GLEW �ʱ�ȭ�ϱ�
+
 	glewExperimental = GL_TRUE;
 	glewInit();
 	shader.make_shaderProgram();
-	player.initialize();				//vao,vbo ����
+	player.initialize();
 	player.get_shader(shader);
 
 	ground.initialize();
 	ground.get_shader(shader);
-	bullet_line.initialize();
-	bullet_line.get_shader(shader);
-	bullet.initialize();
-	bullet.get_shader(shader);
 
 	main_camera.get_shader(shader);		
 	minimap_camera.get_shader(shader);
@@ -79,7 +76,7 @@ GLvoid spawn_enemy(int value) {
 	glutTimerFunc(5000, spawn_enemy, 1);
 }
 
-GLvoid Reshape(int w, int h) //--- �ݹ� �Լ�: �ٽ� �׸��� �ݹ� �Լ�
+GLvoid Reshape(int w, int h)
 {
 	width = w;
 	height = h;
@@ -101,16 +98,18 @@ GLvoid draw()
 	pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
 	main_camera.use();
-	//���� ȭ�� �׸���
+
 	player.draw();		
 
   for(auto &enemy: enemies) {
 	  enemy.draw();
   }
-	
 
-	bullet.draw();
-	bullet_line.draw();
+  for (auto& bullet : bullets) {
+	  bullet.draw();
+  }
+
+
 	ground.draw();
 
 	glViewport(width-200, height-200, 200, 200);
@@ -118,16 +117,20 @@ GLvoid draw()
 	//pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
 	minimap_camera.use();
-	//�̴ϸ� �׸���
-  player.draw();		
+
+	player.draw();		
 
 	for (auto& enemy : enemies) {
 		enemy.draw();
 	}
 
+	for (auto& bullet : bullets) {
+		bullet.draw();
+	}
+
 	ground.draw();
 
-	glutSwapBuffers(); //--- ȭ�鿡 ����ϱ�
+	glutSwapBuffers();
 }
 
 void update(int value)
@@ -135,7 +138,7 @@ void update(int value)
 
 	static int lastTime = glutGet(GLUT_ELAPSED_TIME);
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
-	float deltaTime = (currentTime - lastTime) / 1000.0f; // �� ������ ��ȯ
+	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
 
 	for(auto& enemy: enemies) {
@@ -146,9 +149,42 @@ void update(int value)
 	}
 	}
 
+	for (auto& bullet : bullets) {
+		bullet.update(deltaTime, player);
+
+		for (auto& enemy : enemies) {
+			if (checkAABBCollision(bullet.calculateAABB(), enemy.calculateAABB())) {
+				// Handle collision (e.g., reduce enemy health, remove bullet, etc.)
+				for (auto it = enemies.begin(); it != enemies.end(); /* no increment here */) {
+					if (checkAABBCollision(bullet.calculateAABB(), it->calculateAABB())) {
+						// Handle collision (e.g., reduce enemy health, remove bullet, etc.)
+						it->hp -= 1;
+
+						if (it->hp == 0) {
+							// If enemy's health is 0, erase the enemy
+							it = enemies.erase(it);
+							continue;  // Skip the increment since erase already moves the iterator
+						}
+
+						// Remove the bullet
+						// Assuming bullets is a vector of Bullet objects
+						bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
+							return &b == &bullet;  // Your condition to identify the bullet to remove
+							}), bullets.end());
+
+						// If you want to remove only one bullet, break out of the loop
+						break;
+					}
+
+					++it;  // Move to the next element
+				}
+			}
+		}
+	}
+
+
 	glutPostRedisplay();
 	glutTimerFunc(1, update, 1);
-	
 }
 
 void Keyboard(unsigned char key, int x, int y)
@@ -159,8 +195,6 @@ void Keyboard(unsigned char key, int x, int y)
 		bullet_angle += player_rotate;
 
 		player.transform = glm::rotate(player.transform, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
-
-		bullet_line.transform = glm::rotate(bullet_line.transform, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
 		
 		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
 		main_camera.rotate_save = glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
@@ -171,35 +205,17 @@ void Keyboard(unsigned char key, int x, int y)
 		bullet_angle -= player_rotate;
 
 		player.transform = glm::rotate(player.transform, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
-
-		bullet_line.transform = glm::rotate(bullet_line.transform, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
 		
 		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
 		main_camera.rotate_save = glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
 		break;
 
-	case 32:
-		glutTimerFunc(100, bullet_timer, 1);
+	case 32:		//space
+		bullets.push_back(Bullet(shader,player));
+		std::cout << bullets.size() << std::endl;
 		bang = true;
 		break;
 	}
 
 	glutPostRedisplay();
-}
-
-void bullet_timer(int value)
-{
-	GLfloat x = 0.0f;
-	GLfloat y = 0.0f;
-
-	if (bang)
-	{
-		bullet.transform = glm::translate(bullet.transform, glm::vec3(cos(bullet_angle) * x, sin(bullet_angle) * y, 0.0f));
-
-		x += 0.01;
-		y += 0.01;
-
-		glutPostRedisplay();
-		glutTimerFunc(100, bullet_timer, 1);
-	}
 }

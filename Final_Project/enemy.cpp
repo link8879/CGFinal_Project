@@ -135,8 +135,6 @@ void Enemy::draw() {
 
 void Enemy::update(float alpha) {
 
-
-
 	glm::vec3 startPosition = init_location;
 	glm::vec3 endPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -145,4 +143,8 @@ void Enemy::update(float alpha) {
 	transform = glm::translate(glm::mat4(1.0), currentPosition) * glm::scale(glm::mat4(1.0f), size);
 }
 
-
+AABB Enemy::calculateAABB() const {
+	glm::vec3 enemyMin = init_location - size / 2.0f;
+	glm::vec3 enemyMax = init_location + size / 2.0f;
+	return AABB(enemyMin, enemyMax);
+}

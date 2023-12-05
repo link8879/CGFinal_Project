@@ -2,27 +2,43 @@
 #include <vector>
 #include "point.h"
 #include "bullet.h"
-Bullet::Bullet()
+#include "aabb.h"
+#include <iostream>
+
+Bullet::Bullet(Shader& shaders,Player player)
 {
 	const char* objFilePath = "bullet.obj";
 	FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
 	ReadObj(file, vertex);
 	fclose(file);
 
-	color.x = 0.5;
-	color.y = 1.0;
+	shader = shaders;
+	color.x = 0.2;
+	color.y = 0.2;
 	color.z = 1.0;
 	transform = glm::mat4(1.0f);
+	init_transform = player.transform;
+	glGenVertexArrays(1, &VAO); //--- VAO 를 지정하고 할당하기
+	glBindVertexArray(VAO); //--- VAO를 바인드하기
+
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(Point), vertex.data(), GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0); // Enable 필수! 사용하겠단 의미
+	glEnableVertexAttribArray(1);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, x));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, nx));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 Bullet::~Bullet()
 {
 
-}
-
-void Bullet::get_shader(Shader& shaders)
-{
-	shader = shaders;
 }
 
 
@@ -76,25 +92,6 @@ void Bullet::ReadObj(FILE* path, std::vector<Point>& vertexes)
 		vertexes.push_back(Point(vertices[faces[i].z].x, vertices[faces[i].z].y, vertices[faces[i].z].z, normals[normalData[i].z].x, normals[normalData[i].z].y, normals[normalData[i].z].z));
 	}
 }
-void Bullet::initialize()
-{
-	glGenVertexArrays(1, &VAO); //--- VAO 를 지정하고 할당하기
-	glBindVertexArray(VAO); //--- VAO를 바인드하기
-
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(Point), vertex.data(), GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0); // Enable 필수! 사용하겠단 의미
-	glEnableVertexAttribArray(1);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, x));
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, nx));
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-}
 
 void Bullet::draw()
 {
@@ -105,7 +102,7 @@ void Bullet::draw()
 
 	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
 
-	transform = glm::scale(transform, glm::vec3(0.25, 0.25, 0.25));
+	
 
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);
 
@@ -113,5 +110,17 @@ void Bullet::draw()
 	glBindVertexArray(0);
 }
 
+void Bullet::update(float deltaTime, Player player)
+{
+	glm::vec3 startPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 bulletDirection = glm::normalize(glm::vec3(init_transform * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)));
+	bulletPos += bulletDirection * bulletSpeed * deltaTime;
 
+	transform = glm::translate(glm::mat4(1.0f), bulletPos) * glm::scale(glm::mat4(1.0f), glm::vec3(2, 2, 2));;
+}
 
+AABB Bullet::calculateAABB() const {
+	glm::vec3 bulletMin = bulletPos - glm::vec3(1.0f);
+	glm::vec3 bulletMax = bulletPos + glm::vec3(1.0f);
+	return AABB(bulletMin, bulletMax);
+}
