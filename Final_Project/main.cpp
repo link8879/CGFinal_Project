@@ -13,7 +13,9 @@
 #include "soundManager.h"
 #include <algorithm>
 #include <vector>
+#include "gameManager.h"
 
+GameManager game_manager;
 GLfloat width, height;
 GLvoid Reshape(int w, int h);
 GLvoid draw();
@@ -33,6 +35,8 @@ GLfloat player_rotate = 0.0f;
 GLfloat bullet_angle = 0.0f;
 int player_move = 0;
 bool bang = false;
+
+
 
 void update();
 void Keyboard(unsigned char key, int x, int y);
@@ -218,6 +222,10 @@ void Keyboard(unsigned char key, int x, int y)
 		std::cout << bullets.size() << std::endl;
 		bang = true;
 		sound.playShooting();
+		break;
+	case 'r':
+		game_manager.setScore(10);
+		game_manager.printResult();
 		break;
 	}
 
