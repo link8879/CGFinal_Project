@@ -39,7 +39,6 @@ int player_move = 0;
 Wall walls[4] = {Wall(0,-5,0),Wall(0,5,0),Wall(5,0,90),Wall(-5,0,90)};
 bool change_view = false;
 bool game_over = false;
-int count = 0;
 bool bang = false;
 int scores = 0;
 void update();
@@ -89,8 +88,17 @@ GLvoid spawn_enemy(int value) {
 	enemies.push_back(Enemy(shader));
 
 	glutPostRedisplay();
-	if(!game_over) {
+	if(!game_over && scores < 15) {
 		glutTimerFunc(5000, spawn_enemy, 1);
+	}
+	else if(!game_over && scores < 20) {
+		glutTimerFunc(2500, spawn_enemy, 1);
+	}
+	else if(!game_over && scores < 50) {
+		glutTimerFunc(2000, spawn_enemy, 1);
+	}
+	else if(!game_over && scores > 70) {
+		glutTimerFunc(1500, spawn_enemy, 1);
 	}
 }
 
@@ -98,10 +106,6 @@ GLvoid Reshape(int w, int h)
 {
 	width = w;
 	height = h;
-	//glViewport(0, 0, w, h);
-	/*glViewport(w - 200, h - 200, w, h);
-	pTransform = glm::perspective(glm::radians(60.0f), (float)200 / (float)200, 0.1f, 200.0f);
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);*/
 }
 
 GLvoid draw()
@@ -150,9 +154,8 @@ GLvoid draw()
 	glViewport(width-200, height-200, 200, 200);
 
 	if(change_view) {
-		float aspectRatio = 1.0f;
 		main_camera.use();
-		pTransform = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 200.0f);
+		pTransform = glm::perspective(glm::radians(60.0f), (float)width/(float)height, 0.1f, 200.0f);
 	}
 	else {
 		minimap_camera.use();
@@ -206,8 +209,8 @@ void update(int value)
 
 		
 		enemy.update(enemy.t);
-		if (enemy.t >= 1.0) {
-			enemy.t = 1;
+		if (enemy.t >= 0.9) {
+			enemy.t = 0.9;
 			game_over = true;
 
 			std::cout << times << std::endl;
@@ -291,8 +294,7 @@ void Keyboard(unsigned char key, int x, int y)
 
 		player.transform = Pt * Pr * Pr2;
 		
-		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
-		main_camera.rotate_save = glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(glm::mat4(1.0f), glm::radians(-bullet_angle), glm::vec3(0.0, 1.0, 0.0));
 		break;
 
 	case 'e':
@@ -313,8 +315,7 @@ void Keyboard(unsigned char key, int x, int y)
 
 		player.transform = Pt * Pr * Pr2;
 
-		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
-		main_camera.rotate_save = glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
+		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(glm::mat4(1.0f), glm::radians(-bullet_angle), glm::vec3(0.0, 1.0, 0.0));
 	}
 		
 		break;
@@ -340,6 +341,16 @@ void Keyboard(unsigned char key, int x, int y)
 			change_view = false;
 		}
 		
+		break;
+	case 'o':
+		enemies.clear();
+		bullets.clear();
+		game_over = false;
+		scores = 0;
+		game_manager.setScore(scores);
+		game_manager.setTime(time(0));
+		glutTimerFunc(5000, spawn_enemy, 1);
+		glutTimerFunc(1, update, 1);
 		break;
 	}
 

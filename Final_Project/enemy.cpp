@@ -15,7 +15,7 @@ Enemy::Enemy(Shader& shaders) {
 	std::uniform_real_distribution<float> distribution_x(-4.5, 4.5);
 	std::uniform_real_distribution<float> distribution_z(-4.5, 4.5);
 	std::uniform_int_distribution<int> rand_hp(1, 3);
-	std::uniform_int_distribution<int> rand_shape(0, 1);
+	std::uniform_int_distribution<int> rand_shape(0, 2);
 
 	if(rand_shape(generator) == 0) {
 		const char* objFilePath = "enemy.obj";
@@ -23,8 +23,14 @@ Enemy::Enemy(Shader& shaders) {
 		ReadObj(file, vertex);
 		fclose(file);
 	}
-	else {
+	else if(rand_shape(generator) == 1) {
 		const char* objFilePath = "enemy2.obj";
+		FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
+		ReadObj(file, vertex);
+		fclose(file);
+	}
+	else {
+		const char* objFilePath = "enemy3.obj";
 		FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
 		ReadObj(file, vertex);
 		fclose(file);
