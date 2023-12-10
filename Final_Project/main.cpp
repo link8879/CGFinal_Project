@@ -202,51 +202,6 @@ void update(int value)
 	}
 
 	for (auto& bullet : bullets) {
-		bullet.update(deltaTime, player);
-
-		for (auto& enemy : enemies) {
-			if (checkAABBCollision(bullet.calculateAABB(), enemy.calculateAABB())) {
-				// Handle collision (e.g., reduce enemy health, remove bullet, etc.)
-				for (auto it = enemies.begin(); it != enemies.end(); /* no increment here */) {
-					if (checkAABBCollision(bullet.calculateAABB(), it->calculateAABB())) {
-						// Handle collision (e.g., reduce enemy health, remove bullet, etc.)
-						it->hp -= 1;
-
-						if (it->hp == 0) {
-							// If enemy's health is 0, erase the enemy
-							it = enemies.erase(it);
-							continue;  // Skip the increment since erase already moves the iterator
-						}
-
-						// Remove the bullet
-						// Assuming bullets is a vector of Bullet objects
-						bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
-							return &b == &bullet;  // Your condition to identify the bullet to remove
-							}), bullets.end());
-
-						count++;
-						game_manager.setScore(count);
-						game_manager.bullet_counter--;
-
-						// If you want to remove only one bullet, break out of the loop
-						break;
-					}
-
-					++it;  // Move to the next element
-				}
-			}
-		}
-
-		if(bullet.transform[3][0] > 5.0 || bullet.transform[3][2] > 5.0) {
-			bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
-				return &b == &bullet;  // Your condition to identify the bullet to remove
-				}), bullets.end());
-			game_manager.bullet_counter--;
-		}
-
-	}
-
-	for (auto& bullet : bullets) {
 		bool removeBullet = false;
 
 		bullet.update(deltaTime, player);
@@ -277,6 +232,13 @@ void update(int value)
 			bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
 				return &b == &bullet;  // ������ �Ѿ� �ĺ�
 				}), bullets.end());
+		}
+
+		if (bullet.transform[3][0] > 5.0 || bullet.transform[3][2] > 5.0) {
+			bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
+				return &b == &bullet;  // Your condition to identify the bullet to remove
+				}), bullets.end());
+			game_manager.bullet_counter--;
 		}
 	}
 
@@ -347,7 +309,6 @@ void Keyboard(unsigned char key, int x, int y)
 	case 32:		//space
 		bullets.push_back(Bullet(shader,player));
 		std::cout << bullets.size() << std::endl;
-		break;
 		if(game_manager.bullet_counter < 15) {
 			bullets.push_back(Bullet(shader, player));
 			std::cout << bullets.size() << std::endl;
@@ -355,6 +316,7 @@ void Keyboard(unsigned char key, int x, int y)
 			sound.playShooting();
 			game_manager.bullet_counter++;
 		}
+		break;
 
 	case 'a':
 		grenades.push_back(Grenade(shader, player));
