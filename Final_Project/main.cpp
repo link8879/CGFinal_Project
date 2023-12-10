@@ -24,7 +24,7 @@ Player player;
 Ground ground;
 std::vector<Bullet> bullets;
 Camera main_camera(glm::vec3(0,2,-3),glm::vec3(0,0,0),glm::vec3(0,1,0));
-Camera minimap_camera(glm::vec3(0, 4, -0.1), glm::vec3(0, 0, 0),glm::vec3(0,1,0));
+Camera minimap_camera(glm::vec3(0, 3, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));
 Light light;
 SoundManager sound;
 std::vector<Enemy> enemies;
@@ -37,6 +37,8 @@ int player_move = 0;
 bool bang = false;
 
 bool change_view = false;
+bool game_over = false;
+int count = 0;
 
 void update();
 void Keyboard(unsigned char key, int x, int y);
@@ -100,9 +102,10 @@ GLvoid draw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(shader.ID);
+	glm::mat4 pTransform = glm::mat4(1.0f);
 
 	glViewport(0, 0, width, height);
-	glm::mat4 pTransform = glm::mat4(1.0f);
+	
 
 	if(change_view) {
 		minimap_camera.use();
@@ -131,8 +134,9 @@ GLvoid draw()
 	glViewport(width-200, height-200, 200, 200);
 
 	if(change_view) {
+		float aspectRatio = 1.0f;
 		main_camera.use();
-		pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
+		pTransform = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 200.0f);
 	}
 	else {
 		minimap_camera.use();
@@ -163,12 +167,30 @@ void update(int value)
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
+	time_t times = time(0);
 
 	for(auto& enemy: enemies) {
-		enemy.t += deltaTime * 0.1;
+		if(times - game_manager.getTime() > 30) {
+			enemy.t += deltaTime * 0.125;
+		}
+		else if(times - game_manager.getTime() > 120) {
+			enemy.t += deltaTime * 0.15;
+		}
+		else {
+			enemy.t += deltaTime * 0.1;
+		}
+
+		
 		enemy.update(enemy.t);
 	if(enemy.t >= 1.0) {
 		enemy.t = 1;
+		game_over = true;
+		
+		std::cout << times << std::endl;
+		std::cout << game_manager.getTime() << std::endl;
+		times = times - game_manager.getTime();
+		game_manager.setTime(times);
+		game_manager.printResult();
 	}
 	}
 
@@ -195,6 +217,10 @@ void update(int value)
 							return &b == &bullet;  // Your condition to identify the bullet to remove
 							}), bullets.end());
 
+						count++;
+						game_manager.setScore(count);
+						game_manager.bullet_counter--;
+
 						// If you want to remove only one bullet, break out of the loop
 						break;
 					}
@@ -203,11 +229,21 @@ void update(int value)
 				}
 			}
 		}
+
+		if(bullet.transform[3][0] > 5.0 || bullet.transform[3][2] > 5.0) {
+			bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
+				return &b == &bullet;  // Your condition to identify the bullet to remove
+				}), bullets.end());
+			game_manager.bullet_counter--;
+		}
+
 	}
 
 
 	glutPostRedisplay();
-	glutTimerFunc(1, update, 1);
+	if(!game_over) {
+		glutTimerFunc(1, update, 1);
+	}
 }
 
 void Keyboard(unsigned char key, int x, int y)
@@ -234,10 +270,15 @@ void Keyboard(unsigned char key, int x, int y)
 		break;
 
 	case 32:		//space
-		bullets.push_back(Bullet(shader,player));
-		std::cout << bullets.size() << std::endl;
-		bang = true;
-		sound.playShooting();
+
+		if(game_manager.bullet_counter < 15) {
+			bullets.push_back(Bullet(shader, player));
+			std::cout << bullets.size() << std::endl;
+			bang = true;
+			sound.playShooting();
+			game_manager.bullet_counter++;
+		}
+		
 		break;
 	case 'r':
 		if(!change_view) {

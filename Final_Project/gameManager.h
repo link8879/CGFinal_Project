@@ -1,15 +1,17 @@
+#include "time.h"
+
 class GameManager
 {
 private:
 	int score;
-	float time;
+	time_t time_;
 public:
-
+	int bullet_counter;
 	GameManager();
 	~GameManager();
 
 	int getScore();
-	float getTime();
+	time_t getTime();
 
 	void setScore(int score);
 	void setTime(float time);

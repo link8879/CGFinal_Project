@@ -18,7 +18,7 @@ SoundManager::SoundManager()
 void SoundManager::playBgm()
 {
 	bgm_channel->stop();
-	//system->playSound(bgm, 0, false, &bgm_channel);
+	system->playSound(bgm, 0, false, &bgm_channel);
 }
 
 void SoundManager::playShooting()

@@ -6,8 +6,10 @@
 
 GameManager::GameManager()
 {
-	setTime(time_t());
+	time_ = time(0);
 	setScore(0);
+	bullet_counter = 0;
+	std::cout << time_;
 }
 GameManager::~GameManager()
 {
@@ -21,7 +23,7 @@ void GameManager::setScore(int scores)
 
 void GameManager::setTime(float times)
 {
-	time = times;
+	time_ = times;
 }
 
 int GameManager::getScore()
@@ -29,9 +31,9 @@ int GameManager::getScore()
 	return score;
 }
 
-float GameManager::getTime()
+time_t GameManager::getTime()
 {
-	return time;
+	return time_;
 }
 
 
@@ -39,7 +41,7 @@ void GameManager::printResult()
 {
 	std::cout << "Game Over" << std::endl;
 	std::cout << "--------------------------" << std::endl;
-	std::cout << "Score" <<  getScore() <<std::endl;
-	std::cout << "Time" << getTime() << std::endl;
+	std::cout << "Score: " <<  getScore() <<std::endl;
+	std::cout << "Time: " << getTime() << std::endl;
 }
 
