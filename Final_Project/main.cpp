@@ -24,14 +24,14 @@ Shader shader;
 Player player;
 Ground ground;
 std::vector<Bullet> bullets;
-Camera main_camera(glm::vec3(0,2,-3),glm::vec3(0,0,0),glm::vec3(0,1,0));
+Camera main_camera(glm::vec3(0,2,3),glm::vec3(0,0,0),glm::vec3(0,1,0));
 Camera minimap_camera(glm::vec3(0, 3, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));
 Light light;
 SoundManager sound;
 std::vector<Enemy> enemies;
 void update(int value);
 GLvoid spawn_enemy(int value);
-
+std::vector<Grenade> grenades;
 GLfloat player_rotate = 0.0f;
 GLfloat bullet_angle = 0.0f;
 int player_move = 0;
@@ -39,7 +39,7 @@ int player_move = 0;
 bool change_view = false;
 bool game_over = false;
 int count = 0;
-
+bool bang = false;
 void update();
 void Keyboard(unsigned char key, int x, int y);
 

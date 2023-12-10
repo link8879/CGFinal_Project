@@ -1,5 +1,4 @@
 #include "soundManager.h"
-
 #include <iostream>
 
 SoundManager::SoundManager()
@@ -11,7 +10,7 @@ SoundManager::SoundManager()
 
 	system->init(32, FMOD_INIT_NORMAL, extradriverdata);
 	system->createSound("bgm.mp3", FMOD_LOOP_NORMAL, 0, &bgm);
-	system->createSound("shooting_sound.wav", FMOD_LOOP_OFF, 0,&shooting);
+	system->createSound("shooting_sound.wav", FMOD_LOOP_OFF, 0, &shooting);
 
 }
 

@@ -115,7 +115,7 @@ void Grenade::update(float deltaTime, Player player, float y)
 {	
 	glm::vec3 startPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
-	glm::vec3 grenadeDirection = glm::normalize(glm::vec3(init_transform * glm::vec4(0.0f, y, -1.0f, 0.0f)));
+	glm::vec3 grenadeDirection = glm::normalize(glm::vec3(init_transform * glm::vec4(0.0f, y, 1.0f, 0.0f)));
 
 	grenadePos += grenadeDirection * grenadeSpeed * deltaTime;
 
