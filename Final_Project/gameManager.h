@@ -7,6 +7,7 @@ private:
 	time_t time_;
 public:
 	int bullet_counter;
+	int grenade_counter;
 	GameManager();
 	~GameManager();
 

@@ -114,8 +114,8 @@ void Player::draw()
 }
 
 AABB Player::calculateAABB() const {
-	glm::vec3 playerMin = init_location - glm::vec3(0.25, 0.25, 0.25);
-	glm::vec3 playerMax = init_location + glm::vec3(0.25, 0.25, 0.25);
+	glm::vec3 playerMin = glm::vec3(0.0f, 0.0f, 0.0f) - glm::vec3(0.25, 0, 0.25);
+	glm::vec3 playerMax = glm::vec3(0.0f, 0.0f, 0.0f) + glm::vec3(0.25, 0, 0.25);
 
 	return AABB(playerMin, playerMax);
 }

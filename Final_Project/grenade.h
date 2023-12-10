@@ -20,6 +20,8 @@ public:
 	bool is_not_boomed = false;
 	float grenade_y = 3.0;
 
+	bool is_boom = false;
+
 	~Grenade();
 	Grenade(Shader& shader, Player player);
 

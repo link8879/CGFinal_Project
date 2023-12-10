@@ -16,6 +16,7 @@
 #include <vector>
 #include "gameManager.h"
 #include "wall.h"
+#include "boom.h"
 
 GameManager game_manager;
 GLfloat width, height;
@@ -33,10 +34,16 @@ std::vector<Enemy> enemies;
 void update(int value);
 GLvoid spawn_enemy(int value);
 std::vector<Grenade> grenades;
+
+std::vector<Boom> booms;
+
 GLfloat player_rotate = 0.0f;
 GLfloat bullet_angle = 0.0f;
 int player_move = 0;
 Wall walls[4] = {Wall(0,-5,0),Wall(0,5,0),Wall(5,0,90),Wall(-5,0,90)};
+
+bool remove_grenade = false;
+
 bool change_view = false;
 bool game_over = false;
 bool bang = false;
@@ -211,13 +218,18 @@ void update(int value)
 		enemy.update(enemy.t);
 		if (enemy.t >= 0.9) {
 			enemy.t = 0.9;
-			game_over = true;
+			//game_over = true;
 
 			std::cout << times << std::endl;
 			std::cout << game_manager.getTime() << std::endl;
 			times = times - game_manager.getTime();
 			game_manager.setTime(times);
 			game_manager.printResult();
+		}
+
+		if (checkAABBCollision(enemy.calculateAABB(), player.calculateAABB())) {
+			game_over = true;
+			std::cout << "you died" << std::endl;
 		}
 	}
 
@@ -228,10 +240,12 @@ void update(int value)
 
 		for (auto it = enemies.begin(); it != enemies.end();) {
 			if (checkAABBCollision(bullet.calculateAABB(), it->calculateAABB())) {
-				
 				it->hp -= 1;
 
 				removeBullet = true;
+
+				std::cout << "crash" << std::endl;
+
 				if (it->hp == 0) {
 					it = enemies.erase(it);
 					continue;
@@ -257,14 +271,37 @@ void update(int value)
 		}
 	}
 
+	// grenade and create boom
 	for (auto& grenade : grenades) {
 		grenade.grenade_y -= 0.01;
 
 		grenade.update(deltaTime, player, grenade.grenade_y);
 
-		if(grenade.grenade_y <= -2.0 && grenade.is_not_boomed) {
-			sound.playboom();
-			grenade.is_not_boomed = false;
+		if (grenade.grenade_y <= -3.0 && grenade.is_boom) {
+			booms.push_back(Boom(grenade.transform[3][0], grenade.transform[3][2]));
+
+			for (auto& boom : booms) {
+				for (auto it = enemies.begin(); it != enemies.end();) {
+					if (checkAABBCollision(boom.calculateAABB(), it->calculateAABB())) {
+						it->hp -= 1;
+
+						grenade.is_boom = false;
+						std::cout << "Boom!" << std::endl;
+
+						if (it->hp == 0) {
+							it = enemies.erase(it);
+							continue;
+						}
+
+						break;
+					}
+
+					++it;
+				}
+				
+			}
+
+			booms.clear();
 		}
 	}
 
@@ -331,7 +368,11 @@ void Keyboard(unsigned char key, int x, int y)
 		break;
 
 	case 'a':
-		grenades.push_back(Grenade(shader, player));
+		if (game_manager.grenade_counter > 0) {
+			grenades.push_back(Grenade(shader, player));
+			std::cout << "grenade: " << game_manager.grenade_counter << std::endl;
+			game_manager.grenade_counter--;
+		}
 		break;
 	case 'r':
 		if(!change_view) {

@@ -20,6 +20,8 @@ Grenade::Grenade(Shader& shaders, Player player)
 	init_transform = player.transform;
 	is_not_boomed = true;
 
+	is_boom = true;
+
 	glGenVertexArrays(1, &VAO); //--- VAO 를 지정하고 할당하기
 	glBindVertexArray(VAO); //--- VAO를 바인드하기
 
