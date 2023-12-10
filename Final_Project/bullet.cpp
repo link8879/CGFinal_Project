@@ -113,10 +113,10 @@ void Bullet::draw()
 void Bullet::update(float deltaTime, Player player)
 {
 	glm::vec3 startPosition = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 bulletDirection = glm::normalize(glm::vec3(init_transform * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)));
+	glm::vec3 bulletDirection = glm::normalize(glm::vec3(init_transform * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f)));
 	bulletPos += bulletDirection * bulletSpeed * deltaTime;
 
-	transform = glm::translate(glm::mat4(1.0f), bulletPos) * glm::scale(glm::mat4(1.0f), glm::vec3(2, 2, 2));;
+	transform = glm::translate(glm::mat4(1.0f), bulletPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));
 }
 
 AABB Bullet::calculateAABB() const {

@@ -21,7 +21,7 @@ Shader shader;
 Player player;
 Ground ground;
 std::vector<Bullet> bullets;
-Camera main_camera(glm::vec3(0,2,3),glm::vec3(0,0,0),glm::vec3(0,1,0));
+Camera main_camera(glm::vec3(0,2,-3),glm::vec3(0,0,0),glm::vec3(0,1,0));
 Camera minimap_camera(glm::vec3(0, 4, -0.1), glm::vec3(0, 0, 0),glm::vec3(0,1,0));
 Light light;
 SoundManager sound;
@@ -217,6 +217,7 @@ void Keyboard(unsigned char key, int x, int y)
 		bullets.push_back(Bullet(shader,player));
 		std::cout << bullets.size() << std::endl;
 		bang = true;
+		sound.playShooting();
 		break;
 	}
 

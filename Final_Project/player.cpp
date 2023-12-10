@@ -77,15 +77,15 @@ void Player::ReadObj(FILE* path, std::vector<Point>& vertexes)
 }
 void Player::initialize()
 {
-	glGenVertexArrays(1, &VAO); //--- VAO �� �����ϰ� �Ҵ��ϱ�
-	glBindVertexArray(VAO); //--- VAO�� ���ε��ϱ�
+	glGenVertexArrays(1, &VAO); 
+	glBindVertexArray(VAO); 
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(Point), vertex.data(), GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(0); // Enable �ʼ�! ����ϰڴ� �ǹ�
+	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, x));
