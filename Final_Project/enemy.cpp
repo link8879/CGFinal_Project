@@ -181,8 +181,11 @@ void Enemy::update(float alpha) {
 }
 
 AABB Enemy::calculateAABB() const {
-	glm::vec3 enemyMin = init_location - size / 2.0f;
-	glm::vec3 enemyMax = init_location + size / 2.0f;
+	/*glm::vec3 enemyMin = init_location - size / 1.0f;
+	glm::vec3 enemyMax = init_location + size / 1.0f;*/
+
+	glm::vec3 enemyMin = glm::vec3(transform[3][0], transform[3][1], transform[3][2]) - size / 2.0f;
+	glm::vec3 enemyMax = glm::vec3(transform[3][0], transform[3][1], transform[3][2]) + size / 2.0f;
 	
 	return AABB(enemyMin, enemyMax);
 }

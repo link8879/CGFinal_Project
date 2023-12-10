@@ -143,9 +143,11 @@
     <ClCompile Include="player.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="soundManager.cpp" />
+    <ClCompile Include="boom.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aabb.h" />
+    <ClInclude Include="boom.h" />
     <ClInclude Include="bullet.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="collision.h" />

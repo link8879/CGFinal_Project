@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <vector>
 #include "gameManager.h"
+#include "boom.h"
 
 GameManager game_manager;
 GLfloat width, height;
@@ -32,9 +33,14 @@ std::vector<Enemy> enemies;
 void update(int value);
 GLvoid spawn_enemy(int value);
 std::vector<Grenade> grenades;
+
+std::vector<Boom> booms;
+
 GLfloat player_rotate = 0.0f;
 GLfloat bullet_angle = 0.0f;
 int player_move = 0;
+
+bool remove_grenade = false;
 
 bool change_view = false;
 bool game_over = false;
@@ -189,61 +195,21 @@ void update(int value)
 
 		
 		enemy.update(enemy.t);
-	if(enemy.t >= 1.0) {
-		enemy.t = 1;
-		game_over = true;
+		if(enemy.t >= 1.0) {
+			enemy.t = 1;
+			// game_over = true;
 		
-		std::cout << times << std::endl;
-		std::cout << game_manager.getTime() << std::endl;
-		times = times - game_manager.getTime();
-		game_manager.setTime(times);
-		game_manager.printResult();
-	}
-	}
-
-	for (auto& bullet : bullets) {
-		bullet.update(deltaTime, player);
-
-		for (auto& enemy : enemies) {
-			if (checkAABBCollision(bullet.calculateAABB(), enemy.calculateAABB())) {
-				// Handle collision (e.g., reduce enemy health, remove bullet, etc.)
-				for (auto it = enemies.begin(); it != enemies.end(); /* no increment here */) {
-					if (checkAABBCollision(bullet.calculateAABB(), it->calculateAABB())) {
-						// Handle collision (e.g., reduce enemy health, remove bullet, etc.)
-						it->hp -= 1;
-
-						if (it->hp == 0) {
-							// If enemy's health is 0, erase the enemy
-							it = enemies.erase(it);
-							continue;  // Skip the increment since erase already moves the iterator
-						}
-
-						// Remove the bullet
-						// Assuming bullets is a vector of Bullet objects
-						bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
-							return &b == &bullet;  // Your condition to identify the bullet to remove
-							}), bullets.end());
-
-						count++;
-						game_manager.setScore(count);
-						game_manager.bullet_counter--;
-
-						// If you want to remove only one bullet, break out of the loop
-						break;
-					}
-
-					++it;  // Move to the next element
-				}
-			}
+			std::cout << times << std::endl;
+			std::cout << game_manager.getTime() << std::endl;
+			times = times - game_manager.getTime();
+			game_manager.setTime(times);
+			game_manager.printResult();
 		}
 
-		if(bullet.transform[3][0] > 5.0 || bullet.transform[3][2] > 5.0) {
-			bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
-				return &b == &bullet;  // Your condition to identify the bullet to remove
-				}), bullets.end());
-			game_manager.bullet_counter--;
+		if (checkAABBCollision(enemy.calculateAABB(), player.calculateAABB())) {
+			game_over = true;
+			std::cout << "you died" << std::endl;
 		}
-
 	}
 
 	for (auto& bullet : bullets) {
@@ -251,43 +217,64 @@ void update(int value)
 
 		bullet.update(deltaTime, player);
 
-		for (auto it = enemies.begin(); it != enemies.end(); /* ���α� */) {
+		for (auto it = enemies.begin(); it != enemies.end();) {
 			if (checkAABBCollision(bullet.calculateAABB(), it->calculateAABB())) {
-				// Handle collision (e.g., �� ü�� ����, �Ѿ� ����, ���)
 				it->hp -= 1;
 
 				removeBullet = true;
 
-				// ���� ü���� 0�̶�� Ż��
+				std::cout << "crash" << std::endl;
+
 				if (it->hp == 0) {
 					it = enemies.erase(it);
 					continue;
 				}
 
-				// ���� �� ���� �Ѿ� �浹 üũ �� Ż��
 				break;
 			}
 
-			// ���� ��ü�� �̵�
 			++it;
 		}
 
-		// �� ���� �ۿ��� �Ѿ� ����
 		if (removeBullet) {
 			bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
-				return &b == &bullet;  // ������ �Ѿ� �ĺ�
+				return &b == &bullet;
 				}), bullets.end());
 		}
 	}
 
-
-
+	// grenade and create boom
 	for (auto& grenade : grenades) {
 		grenade.grenade_y -= 0.01;
 
 		grenade.update(deltaTime, player, grenade.grenade_y);
 
-		
+		if (grenade.grenade_y <= -3.0 && grenade.is_boom) {
+			booms.push_back(Boom(grenade.transform[3][0], grenade.transform[3][2]));
+
+			for (auto& boom : booms) {
+				for (auto it = enemies.begin(); it != enemies.end();) {
+					if (checkAABBCollision(boom.calculateAABB(), it->calculateAABB())) {
+						it->hp -= 1;
+
+						grenade.is_boom = false;
+						std::cout << "Boom!" << std::endl;
+
+						if (it->hp == 0) {
+							it = enemies.erase(it);
+							continue;
+						}
+
+						break;
+					}
+
+					++it;
+				}
+				
+			}
+
+			booms.clear();
+		}
 	}
 
 	glutPostRedisplay();
@@ -345,9 +332,6 @@ void Keyboard(unsigned char key, int x, int y)
 		break;
 
 	case 32:		//space
-		bullets.push_back(Bullet(shader,player));
-		std::cout << bullets.size() << std::endl;
-		break;
 		if(game_manager.bullet_counter < 15) {
 			bullets.push_back(Bullet(shader, player));
 			std::cout << bullets.size() << std::endl;
@@ -355,9 +339,14 @@ void Keyboard(unsigned char key, int x, int y)
 			sound.playShooting();
 			game_manager.bullet_counter++;
 		}
+		break;
 
 	case 'a':
-		grenades.push_back(Grenade(shader, player));
+		if (game_manager.grenade_counter > 0) {
+			grenades.push_back(Grenade(shader, player));
+			std::cout << "grenade: " << game_manager.grenade_counter << std::endl;
+			game_manager.grenade_counter--;
+		}
 		break;
 	case 'r':
 		if(!change_view) {
