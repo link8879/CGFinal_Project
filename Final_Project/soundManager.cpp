@@ -11,7 +11,7 @@ SoundManager::SoundManager()
 	system->init(32, FMOD_INIT_NORMAL, extradriverdata);
 	system->createSound("bgm.mp3", FMOD_LOOP_NORMAL, 0, &bgm);
 	system->createSound("shooting_sound.wav", FMOD_LOOP_OFF, 0, &shooting);
-
+	system->createSound("boom.wav", FMOD_LOOP_OFF, 0, &boom);
 }
 
 void SoundManager::playBgm()
@@ -25,5 +25,11 @@ void SoundManager::playShooting()
 	//channel->stop();
 	system->playSound(shooting, 0, false, &shooting_channel);
 }
+
+void SoundManager::playboom()
+{
+	system->playSound(boom, 0, false, &grenade_channel);
+}
+
 
 

@@ -12,8 +12,8 @@ Enemy::Enemy(Shader& shaders) {
 	shader = shaders;
 	std::mt19937 generator(std::random_device{}());
 
-	std::uniform_real_distribution<float> distribution_x(-5, 5.0);
-	std::uniform_real_distribution<float> distribution_z(-5, 5.0);
+	std::uniform_real_distribution<float> distribution_x(-4.5, 4.5);
+	std::uniform_real_distribution<float> distribution_z(-4.5, 4.5);
 	std::uniform_int_distribution<int> rand_hp(1, 3);
 	std::uniform_int_distribution<int> rand_shape(0, 1);
 
@@ -37,14 +37,14 @@ Enemy::Enemy(Shader& shaders) {
 	  color.y = 0.5;
 	  color.z = 1.0;
 
-	  size = glm::vec3(0.35, 0.35, 0.35);
+	  size = glm::vec3(1, 1, 1);
   }
   else if(hp == 2) {
 	  color.x = 0;
 	  color.y = 1;
 	  color.z = 0.5;
 
-	  size = glm::vec3(0.75, 0.75, 0.75);
+	  size = glm::vec3(1, 1, 1);
   }
   else if(hp == 3) {
 	  color.x = 1;
@@ -56,12 +56,12 @@ Enemy::Enemy(Shader& shaders) {
 	float random_x = distribution_x(generator);
 	float random_z = distribution_z(generator);
 
-	if(random_x < 1 && random_z <1) {
+	if(random_x < 1 && random_z <1 && random_x > -1 && random_z > -1) {
 		random_x = 4;
 	}
 
 	init_location = glm::vec3(random_x, 0, random_z);
-	transform = glm::translate(glm::mat4(1.0f), glm::vec3(random_x, 0, random_z)) *glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));
+	transform = glm::translate(glm::mat4(1.0f), glm::vec3(random_x, 0, random_z));
 
 	glGenVertexArrays(1, &VAO); //--- VAO 를 지정하고 할당하기
 	glBindVertexArray(VAO); //--- VAO를 바인드하기
@@ -156,14 +156,14 @@ void Enemy::update(float alpha) {
 		color.y = 0.5;
 		color.z = 1.0;
 
-		size = glm::vec3(0.35, 0.35, 0.35);
+		size = glm::vec3(1, 1, 1);
 	}
 	else if (hp == 2) {
 		color.x = 0;
 		color.y = 1;
 		color.z = 0.5;
 
-		size = glm::vec3(0.75, 0.75, 0.75);
+		size = glm::vec3(1, 1, 1);
 	}
 	else if (hp == 3) {
 		color.x = 1;
@@ -181,8 +181,8 @@ void Enemy::update(float alpha) {
 }
 
 AABB Enemy::calculateAABB() const {
-	glm::vec3 enemyMin = init_location - size / 2.0f;
-	glm::vec3 enemyMax = init_location + size / 2.0f;
+	glm::vec3 enemyMin = init_location - size / 1.0f;
+	glm::vec3 enemyMax = init_location + size / 1.0f;
 	
 	return AABB(enemyMin, enemyMax);
 }

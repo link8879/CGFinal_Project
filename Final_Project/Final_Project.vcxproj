@@ -143,6 +143,7 @@
     <ClCompile Include="player.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="soundManager.cpp" />
+    <ClCompile Include="wall.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aabb.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="point.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="soundManager.h" />
+    <ClInclude Include="wall.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="light_fragment.glsl" />

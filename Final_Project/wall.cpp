@@ -1,50 +1,33 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <vector>
 #include "point.h"
-#include "grenade.h"
-#include "aabb.h"
-#include <iostream>
-
-Grenade::Grenade(Shader& shaders, Player player)
+#include "Wall.h"
+Wall::Wall(float move_x,float move_z,float angle)
 {
-	const char* objFilePath = "bullet.obj";
-	FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
+	const char* objFilePath = "cube.obj";
+	FILE* file = fopen(objFilePath, "r"); 
 	ReadObj(file, vertex);
 	fclose(file);
 
-	shader = shaders;
-	color.x = 0.3;
-	color.y = 1.0;
+	color.x = 0.5;
+	color.y = 0.5;
 	color.z = 0.5;
 	transform = glm::mat4(1.0f);
-	init_transform = player.transform;
-	is_not_boomed = true;
-
-	glGenVertexArrays(1, &VAO); //--- VAO 를 지정하고 할당하기
-	glBindVertexArray(VAO); //--- VAO를 바인드하기
-
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(Point), vertex.data(), GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0); // Enable 필수! 사용하겠단 의미
-	glEnableVertexAttribArray(1);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, x));
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, nx));
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	transform = glm::translate(glm::mat4(1.0f), glm::vec3(move_x,1,move_z)) *glm::rotate(glm::mat4(1.0f),glm::radians(angle),glm::vec3(0,1,0))* glm::scale(glm::mat4(1.0f), glm::vec3(10.0, 5.0, 0.1));
 }
 
-Grenade::~Grenade()
+Wall::~Wall()
 {
 
 }
 
+void Wall::get_shader(Shader& shaders)
+{
+	shader = shaders;
+}
 
-void Grenade::ReadObj(FILE* path, std::vector<Point>& vertexes)
+
+void Wall::ReadObj(FILE* path, std::vector<Point>& vertexes)
 {
 	char bind[128];
 	memset(bind, 0, sizeof(bind));
@@ -87,44 +70,45 @@ void Grenade::ReadObj(FILE* path, std::vector<Point>& vertexes)
 		}
 	}
 
-	// 필요한 경우 읽어온 값을 전역 변수 등에 저장
+
 	for (int i = 0; i < faces.size(); ++i) {
 		vertexes.push_back(Point(vertices[faces[i].x].x, vertices[faces[i].x].y, vertices[faces[i].x].z, normals[normalData[i].x].x, normals[normalData[i].x].y, normals[normalData[i].x].z));
 		vertexes.push_back(Point(vertices[faces[i].y].x, vertices[faces[i].y].y, vertices[faces[i].y].z, normals[normalData[i].y].x, normals[normalData[i].y].y, normals[normalData[i].y].z));
 		vertexes.push_back(Point(vertices[faces[i].z].x, vertices[faces[i].z].y, vertices[faces[i].z].z, normals[normalData[i].z].x, normals[normalData[i].z].y, normals[normalData[i].z].z));
 	}
 }
+void Wall::initialize()
+{
+	glGenVertexArrays(1, &VAO); 
+	glBindVertexArray(VAO); 
 
-void Grenade::draw()
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(Point), vertex.data(), GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0); 
+	glEnableVertexAttribArray(1);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, x));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, nx));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void Wall::draw()
 {
 	glBindVertexArray(VAO);
 
-	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); //--- object Color값 전달: (1.0, 0.5, 0.3)의 색
+	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); 
 	glUniform3f(objColorLocation, color.x, color.y, color.z);
 
-	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
-
-
+	int modelLoc = glGetUniformLocation(shader.ID, "model"); 
+	// transform = glm::scale(glm::mat4(1.0f), glm::vec3(10.0, 0.0, 10.0));
 
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);
 
 	glDrawArrays(GL_TRIANGLES, 0, vertex.size());
 	glBindVertexArray(0);
-}
-
-void Grenade::update(float deltaTime, Player player, float y)
-{	
-	glm::vec3 startPosition = glm::vec3(0.0f, 0.0f, 0.0f);
-
-	glm::vec3 grenadeDirection = glm::normalize(glm::vec3(init_transform * glm::vec4(0.0f, y, 1.0f, 0.0f)));
-
-	grenadePos += grenadeDirection * grenadeSpeed * deltaTime;
-
-	transform = glm::translate(glm::mat4(1.0f), grenadePos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));
-}
-
-AABB Grenade::calculateAABB() const {
-	glm::vec3 grenadeMin = grenadePos - glm::vec3(1.0f);
-	glm::vec3 grenadeMax = grenadePos + glm::vec3(1.0f);
-	return AABB(grenadeMin, grenadeMax);
 }

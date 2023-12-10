@@ -17,7 +17,7 @@ public:
 	glm::mat4 init_transform = glm::mat4(1.0f);
 	glm::vec3 grenadePos = glm::vec3(0, 0, 0);
 	float grenadeSpeed = 5;
-	
+	bool is_not_boomed = false;
 	float grenade_y = 3.0;
 
 	~Grenade();

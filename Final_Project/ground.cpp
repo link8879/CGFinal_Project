@@ -9,9 +9,9 @@ Ground::Ground()
 	ReadObj(file, vertex);
 	fclose(file);
 
-	color.x = 1.0;
-	color.y = 1.0;
-	color.z = 1.0;
+	color.x = 0.5;
+	color.y = 0.5;
+	color.z = 0.5;
 	transform = glm::mat4(1.0f);
 }
 
