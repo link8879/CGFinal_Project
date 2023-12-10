@@ -10,6 +10,7 @@
 #include "ground.h"
 #include "aabb.h"
 #include "collision.h"
+#include "soundManager.h"
 #include <algorithm>
 #include <vector>
 
@@ -21,8 +22,9 @@ Player player;
 Ground ground;
 std::vector<Bullet> bullets;
 Camera main_camera(glm::vec3(0,2,3),glm::vec3(0,0,0),glm::vec3(0,1,0));
-Camera minimap_camera(glm::vec3(0, 4, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));
+Camera minimap_camera(glm::vec3(0, 4, -0.1), glm::vec3(0, 0, 0),glm::vec3(0,1,0));
 Light light;
+SoundManager sound;
 std::vector<Enemy> enemies;
 void update(int value);
 GLvoid spawn_enemy(int value);
@@ -58,6 +60,8 @@ void main(int argc, char** argv)
 
 	light.setLight(shader);
 	enemies.reserve(50);
+
+	sound.playBgm();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glutDisplayFunc(draw);
@@ -113,8 +117,7 @@ GLvoid draw()
 	ground.draw();
 
 	glViewport(width-200, height-200, 200, 200);
-	pTransform = glm::ortho(-5.0, 5.0, -5.0, 5.0, -5.0, 5.0);
-	//pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
+	pTransform = glm::ortho(-4.0, 4.0, -4.0, 4.0, -4.0, 4.0);
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
 	minimap_camera.use();
 

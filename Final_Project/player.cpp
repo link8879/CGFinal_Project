@@ -5,7 +5,7 @@
 Player::Player()
 {
 	const char* objFilePath = "player.obj";
-	FILE* file = fopen(objFilePath, "r"); // "r"�� �б� ��带 ��Ÿ���ϴ�.
+	FILE* file = fopen(objFilePath, "r"); 
 	ReadObj(file, vertex);
 	fclose(file);
 
@@ -69,7 +69,6 @@ void Player::ReadObj(FILE* path, std::vector<Point>& vertexes)
 		}
 	}
 
-	// �ʿ��� ��� �о�� ���� ���� ���� � ����
 	for (int i = 0; i < faces.size(); ++i) {
 		vertexes.push_back(Point(vertices[faces[i].x].x, vertices[faces[i].x].y, vertices[faces[i].x].z, normals[normalData[i].x].x, normals[normalData[i].x].y, normals[normalData[i].x].z));
 		vertexes.push_back(Point(vertices[faces[i].y].x, vertices[faces[i].y].y, vertices[faces[i].y].z, normals[normalData[i].y].x, normals[normalData[i].y].y, normals[normalData[i].y].z));
@@ -100,12 +99,12 @@ void Player::draw()
 {
 	glBindVertexArray(VAO);
 
-	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); //--- object Color�� ����: (1.0, 0.5, 0.3)�� ��
+	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor");
 	glUniform3f(objColorLocation, color.x, color.y, color.z);
 
-	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- ���ؽ� ���̴����� ���� ��ȯ ��� �������� �޾ƿ´�.
+	int modelLoc = glGetUniformLocation(shader.ID, "model");
 
-	transform = glm::rotate(transform, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+	//transform = glm::rotate(transform, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
 	
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);
 
