@@ -105,7 +105,7 @@ void Ground::draw()
 
 	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
 
-	transform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, -0.5, 0.0)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0, 0.0, 10.0));
+	transform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, -1.0, 0.0)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0, 1.0, 10.0));
 	// transform = glm::scale(glm::mat4(1.0f), glm::vec3(10.0, 0.0, 10.0));
 
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);

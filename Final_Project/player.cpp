@@ -2,6 +2,9 @@
 #include <vector>
 #include "point.h"
 #include "player.h"
+#include "aabb.h"
+#include <iostream>
+
 Player::Player()
 {
 	const char* objFilePath = "player.obj";
@@ -12,7 +15,7 @@ Player::Player()
 	color.x = 0.5;
 	color.y = 1.0;
 	color.z = 1.0;
-	transform = glm::mat4(1.0f);
+	transform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, -0.5, 0.0)) * glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));;
 }
 
 Player::~Player()
@@ -105,7 +108,7 @@ void Player::draw()
 
 	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- ���ؽ� ���̴����� ���� ��ȯ ��� �������� �޾ƿ´�.
 
-	transform = glm::rotate(transform, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+	
 	
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);
 
@@ -113,5 +116,9 @@ void Player::draw()
 	glBindVertexArray(0);
 }
 
+AABB Player::calculateAABB() const {
+	glm::vec3 playerMin = init_location - glm::vec3(0.25, 0.25, 0.25);
+	glm::vec3 playerMax = init_location + glm::vec3(0.25, 0.25, 0.25);
 
-
+	return AABB(playerMin, playerMax);
+}

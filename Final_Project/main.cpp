@@ -8,6 +8,7 @@
 #include "shader.h"
 #include "enemy.h"
 #include "ground.h"
+#include "grenade.h"
 #include "aabb.h"
 #include "collision.h"
 #include <algorithm>
@@ -20,7 +21,8 @@ Shader shader;
 Player player;
 Ground ground;
 std::vector<Bullet> bullets;
-Camera main_camera(glm::vec3(0,2,3),glm::vec3(0,0,0),glm::vec3(0,1,0));
+std::vector<Grenade> grenades;
+Camera main_camera(glm::vec3(0,0,3),glm::vec3(0,0,0),glm::vec3(0,1,0));
 Camera minimap_camera(glm::vec3(0, 4, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));
 Light light;
 std::vector<Enemy> enemies;
@@ -30,11 +32,9 @@ GLvoid spawn_enemy(int value);
 GLfloat player_rotate = 0.0f;
 GLfloat bullet_angle = 0.0f;
 int player_move = 0;
-bool bang = false;
 
 void update();
 void Keyboard(unsigned char key, int x, int y);
-void bullet_timer(int value);
 
 void main(int argc, char** argv)
 {
@@ -109,6 +109,10 @@ GLvoid draw()
 	  bullet.draw();
   }
 
+  for (auto& grenade : grenades) {
+	  grenade.draw();
+  }
+
 
 	ground.draw();
 
@@ -128,6 +132,10 @@ GLvoid draw()
 		bullet.draw();
 	}
 
+	for (auto& grenade : grenades) {
+		grenade.draw();
+	}
+
 	ground.draw();
 
 	glutSwapBuffers();
@@ -144,44 +152,58 @@ void update(int value)
 	for(auto& enemy: enemies) {
 		enemy.t += deltaTime * 0.1;
 		enemy.update(enemy.t);
-	if(enemy.t >= 1.0) {
-		enemy.t = 1;
-	}
-	}
+		if(enemy.t >= 1.0) {
+			enemy.t = 1;
+		}
 
-	for (auto& bullet : bullets) {
-		bullet.update(deltaTime, player);
-
-		for (auto& enemy : enemies) {
-			if (checkAABBCollision(bullet.calculateAABB(), enemy.calculateAABB())) {
-				// Handle collision (e.g., reduce enemy health, remove bullet, etc.)
-				for (auto it = enemies.begin(); it != enemies.end(); /* no increment here */) {
-					if (checkAABBCollision(bullet.calculateAABB(), it->calculateAABB())) {
-						// Handle collision (e.g., reduce enemy health, remove bullet, etc.)
-						it->hp -= 1;
-
-						if (it->hp == 0) {
-							// If enemy's health is 0, erase the enemy
-							it = enemies.erase(it);
-							continue;  // Skip the increment since erase already moves the iterator
-						}
-
-						// Remove the bullet
-						// Assuming bullets is a vector of Bullet objects
-						bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
-							return &b == &bullet;  // Your condition to identify the bullet to remove
-							}), bullets.end());
-
-						// If you want to remove only one bullet, break out of the loop
-						break;
-					}
-
-					++it;  // Move to the next element
-				}
-			}
+		if (checkAABBCollision(enemy.calculateAABB(), player.calculateAABB())) {
+			std::cout << "플레이어 사망 ㅋ" << std::endl;
 		}
 	}
 
+	for (auto& bullet : bullets) {
+		bool removeBullet = false;
+
+		bullet.update(deltaTime, player);
+
+		for (auto it = enemies.begin(); it != enemies.end(); /* 비어두기 */) {
+			if (checkAABBCollision(bullet.calculateAABB(), it->calculateAABB())) {
+				// Handle collision (e.g., 적 체력 감소, 총알 제거, 등등)
+				it->hp -= 1;
+
+				removeBullet = true;
+
+				// 적의 체력이 0이라면 탈출
+				if (it->hp == 0) {
+					it = enemies.erase(it);
+					continue;
+				}
+
+				// 적당 한 번의 총알 충돌 체크 후 탈출
+				break;
+			}
+
+			// 다음 객체로 이동
+			++it;
+		}
+
+		// 적 루프 밖에서 총알 제거
+		if (removeBullet) {
+			bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
+				return &b == &bullet;  // 제거할 총알 식별
+				}), bullets.end());
+		}
+	}
+
+
+
+	for (auto& grenade : grenades) {
+		grenade.grenade_y -= 0.01;
+
+		grenade.update(deltaTime, player, grenade.grenade_y);
+
+		
+	}
 
 	glutPostRedisplay();
 	glutTimerFunc(1, update, 1);
@@ -194,26 +216,54 @@ void Keyboard(unsigned char key, int x, int y)
 		player_rotate = 5.0f;
 		bullet_angle += player_rotate;
 
-		player.transform = glm::rotate(player.transform, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
+
+		glm::mat4 Pt = glm::mat4(1.0f);
+		glm::mat4 Pr = glm::mat4(1.0f);
+		glm::mat4 Pr2 = glm::mat4(1.0f);
+
+		Pt = glm::translate(Pt, glm::vec3(0.0, -0.5, 0.0));
+		Pr = glm::rotate(Pr, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+
+		Pr2 = glm::rotate(Pr2, glm::radians(bullet_angle), glm::vec3(0.0, 1.0, 0.0));
+
+
+		player.transform = Pt * Pr * Pr2;
 		
 		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
 		main_camera.rotate_save = glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
 		break;
 
 	case 'e':
+	{
 		player_rotate = -5.0f;
-		bullet_angle -= player_rotate;
+		bullet_angle += player_rotate;
 
-		player.transform = glm::rotate(player.transform, glm::radians(player_rotate), glm::vec3(0.0, 1.0, 0.0));
-		
+
+		glm::mat4 Pt = glm::mat4(1.0f);
+		glm::mat4 Pr = glm::mat4(1.0f);
+		glm::mat4 Pr2 = glm::mat4(1.0f);
+
+		Pt = glm::translate(Pt, glm::vec3(0.0, -0.5, 0.0));
+		Pr = glm::rotate(Pr, glm::radians(180.0f), glm::vec3(0.0, 1.0, 0.0));
+
+		Pr2 = glm::rotate(Pr2, glm::radians(bullet_angle), glm::vec3(0.0, 1.0, 0.0));
+
+
+		player.transform = Pt * Pr * Pr2;
+
 		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
 		main_camera.rotate_save = glm::rotate(main_camera.rotate_save, glm::radians(-player_rotate), glm::vec3(0.0, 1.0, 0.0));
+	}
+		
 		break;
 
 	case 32:		//space
 		bullets.push_back(Bullet(shader,player));
 		std::cout << bullets.size() << std::endl;
-		bang = true;
+		break;
+
+	case 'a':
+		grenades.push_back(Grenade(shader, player));
 		break;
 	}
 

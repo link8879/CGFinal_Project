@@ -135,6 +135,27 @@ void Enemy::draw() {
 
 void Enemy::update(float alpha) {
 
+	if (hp == 1) {
+		color.x = 0.5;
+		color.y = 0.5;
+		color.z = 1.0;
+
+		size = glm::vec3(0.35, 0.35, 0.35);
+	}
+	else if (hp == 2) {
+		color.x = 0;
+		color.y = 1;
+		color.z = 0.5;
+
+		size = glm::vec3(0.75, 0.75, 0.75);
+	}
+	else if (hp == 3) {
+		color.x = 1;
+		color.y = 0.4;
+		color.z = 0.6;
+		size = glm::vec3(1, 1, 1);
+	}
+
 	glm::vec3 startPosition = init_location;
 	glm::vec3 endPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -146,5 +167,6 @@ void Enemy::update(float alpha) {
 AABB Enemy::calculateAABB() const {
 	glm::vec3 enemyMin = init_location - size / 2.0f;
 	glm::vec3 enemyMax = init_location + size / 2.0f;
+	
 	return AABB(enemyMin, enemyMax);
 }

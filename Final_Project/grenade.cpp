@@ -1,11 +1,11 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <vector>
 #include "point.h"
-#include "bullet.h"
+#include "grenade.h"
 #include "aabb.h"
 #include <iostream>
 
-Bullet::Bullet(Shader& shaders,Player player)
+Grenade::Grenade(Shader& shaders, Player player)
 {
 	const char* objFilePath = "bullet.obj";
 	FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
@@ -13,11 +13,12 @@ Bullet::Bullet(Shader& shaders,Player player)
 	fclose(file);
 
 	shader = shaders;
-	color.x = 0.2;
-	color.y = 0.2;
-	color.z = 1.0;
+	color.x = 0.3;
+	color.y = 1.0;
+	color.z = 0.5;
 	transform = glm::mat4(1.0f);
 	init_transform = player.transform;
+
 	glGenVertexArrays(1, &VAO); //--- VAO 를 지정하고 할당하기
 	glBindVertexArray(VAO); //--- VAO를 바인드하기
 
@@ -36,13 +37,13 @@ Bullet::Bullet(Shader& shaders,Player player)
 	glBindVertexArray(0);
 }
 
-Bullet::~Bullet()
+Grenade::~Grenade()
 {
 
 }
 
 
-void Bullet::ReadObj(FILE* path, std::vector<Point>& vertexes)
+void Grenade::ReadObj(FILE* path, std::vector<Point>& vertexes)
 {
 	char bind[128];
 	memset(bind, 0, sizeof(bind));
@@ -93,7 +94,7 @@ void Bullet::ReadObj(FILE* path, std::vector<Point>& vertexes)
 	}
 }
 
-void Bullet::draw()
+void Grenade::draw()
 {
 	glBindVertexArray(VAO);
 
@@ -102,7 +103,7 @@ void Bullet::draw()
 
 	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- 버텍스 세이더에서 뷰잉 변환 행렬 변수값을 받아온다.
 
-	
+
 
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);
 
@@ -110,28 +111,19 @@ void Bullet::draw()
 	glBindVertexArray(0);
 }
 
-void Bullet::update(float deltaTime, Player player)
-{
+void Grenade::update(float deltaTime, Player player, float y)
+{	
 	glm::vec3 startPosition = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 bulletDirection = glm::normalize(glm::vec3(init_transform * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)));
-	bulletPos += bulletDirection * bulletSpeed * deltaTime;
 
-	transform = glm::translate(glm::mat4(1.0f), bulletPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));;
+	glm::vec3 grenadeDirection = glm::normalize(glm::vec3(init_transform * glm::vec4(0.0f, y, -1.0f, 0.0f)));
+
+	grenadePos += grenadeDirection * grenadeSpeed * deltaTime;
+
+	transform = glm::translate(glm::mat4(1.0f), grenadePos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));
 }
 
-AABB Bullet::calculateAABB() const {
-	/*glm::vec3 bulletMin = bulletPos - glm::vec3(1.0f);
-	glm::vec3 bulletMax = bulletPos + glm::vec3(1.0f);
-	return AABB(bulletMin, bulletMax);*/
-
-	float scaleFactor = 0.5f;
-
-	glm::vec3 scaledSize = glm::vec3(1.0f) * scaleFactor;
-
-	glm::vec3 halfExtents = scaledSize * 0.5f;
-
-	glm::vec3 bulletMin = bulletPos - halfExtents;
-	glm::vec3 bulletMax = bulletPos + halfExtents;
-
-	return AABB(bulletMin, bulletMax);
+AABB Grenade::calculateAABB() const {
+	glm::vec3 grenadeMin = grenadePos - glm::vec3(1.0f);
+	glm::vec3 grenadeMax = grenadePos + glm::vec3(1.0f);
+	return AABB(grenadeMin, grenadeMax);
 }
