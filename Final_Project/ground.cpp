@@ -5,7 +5,7 @@
 Ground::Ground()
 {
 	const char* objFilePath = "cube.obj";
-	FILE* file = fopen(objFilePath, "r"); // "r"Àº ÀÐ±â ¸ðµå¸¦ ³ªÅ¸³À´Ï´Ù.
+	FILE* file = fopen(objFilePath, "r"); // "r"ï¿½ï¿½ ï¿½Ð±ï¿½ ï¿½ï¿½å¸¦ ï¿½ï¿½Å¸ï¿½ï¿½ï¿½Ï´ï¿½.
 	ReadObj(file, vertex);
 	fclose(file);
 
@@ -69,7 +69,7 @@ void Ground::ReadObj(FILE* path, std::vector<Point>& vertexes)
 		}
 	}
 
-	// ÇÊ¿äÇÑ °æ¿ì ÀÐ¾î¿Â °ªÀ» Àü¿ª º¯¼ö µî¿¡ ÀúÀå
+	// ï¿½Ê¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ð¾ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½î¿¡ ï¿½ï¿½ï¿½ï¿½
 	for (int i = 0; i < faces.size(); ++i) {
 		vertexes.push_back(Point(vertices[faces[i].x].x, vertices[faces[i].x].y, vertices[faces[i].x].z, normals[normalData[i].x].x, normals[normalData[i].x].y, normals[normalData[i].x].z));
 		vertexes.push_back(Point(vertices[faces[i].y].x, vertices[faces[i].y].y, vertices[faces[i].y].z, normals[normalData[i].y].x, normals[normalData[i].y].y, normals[normalData[i].y].z));
@@ -78,15 +78,15 @@ void Ground::ReadObj(FILE* path, std::vector<Point>& vertexes)
 }
 void Ground::initialize()
 {
-	glGenVertexArrays(1, &VAO); //--- VAO ¸¦ ÁöÁ¤ÇÏ°í ÇÒ´çÇÏ±â
-	glBindVertexArray(VAO); //--- VAO¸¦ ¹ÙÀÎµåÇÏ±â
+	glGenVertexArrays(1, &VAO); //--- VAO ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½Ò´ï¿½ï¿½Ï±ï¿½
+	glBindVertexArray(VAO); //--- VAOï¿½ï¿½ ï¿½ï¿½ï¿½Îµï¿½ï¿½Ï±ï¿½
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(Point), vertex.data(), GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(0); // Enable ÇÊ¼ö! »ç¿ëÇÏ°Ú´Ü ÀÇ¹Ì
+	glEnableVertexAttribArray(0); // Enable ï¿½Ê¼ï¿½! ï¿½ï¿½ï¿½ï¿½Ï°Ú´ï¿½ ï¿½Ç¹ï¿½
 	glEnableVertexAttribArray(1);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, x));
@@ -100,10 +100,10 @@ void Ground::draw()
 {
 	glBindVertexArray(VAO);
 
-	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); //--- object Color°ª Àü´Þ: (1.0, 0.5, 0.3)ÀÇ »ö
+	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); //--- object Colorï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: (1.0, 0.5, 0.3)ï¿½ï¿½ ï¿½ï¿½
 	glUniform3f(objColorLocation, color.x, color.y, color.z);
 
-	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- ¹öÅØ½º ¼¼ÀÌ´õ¿¡¼­ ºäÀ× º¯È¯ Çà·Ä º¯¼ö°ªÀ» ¹Þ¾Æ¿Â´Ù.
+	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- ï¿½ï¿½ï¿½Ø½ï¿½ ï¿½ï¿½ï¿½Ì´ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¯ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Þ¾Æ¿Â´ï¿½.
 
 	transform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, -1.0, 0.0)) * glm::scale(glm::mat4(1.0f), glm::vec3(10.0, 1.0, 10.0));
 	// transform = glm::scale(glm::mat4(1.0f), glm::vec3(10.0, 0.0, 10.0));

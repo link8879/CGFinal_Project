@@ -7,10 +7,7 @@
 #include "random"
 
 Enemy::Enemy(Shader& shaders) {
-	const char* objFilePath = "enemy.obj";
-	FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
-	ReadObj(file, vertex);
-	fclose(file);
+	
 
 	shader = shaders;
 	std::mt19937 generator(std::random_device{}());
@@ -18,6 +15,20 @@ Enemy::Enemy(Shader& shaders) {
 	std::uniform_real_distribution<float> distribution_x(-5, 5.0);
 	std::uniform_real_distribution<float> distribution_z(-5, 5.0);
 	std::uniform_int_distribution<int> rand_hp(1, 3);
+	std::uniform_int_distribution<int> rand_shape(0, 1);
+
+	if(rand_shape(generator) == 0) {
+		const char* objFilePath = "enemy.obj";
+		FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
+		ReadObj(file, vertex);
+		fclose(file);
+	}
+	else {
+		const char* objFilePath = "enemy2.obj";
+		FILE* file = fopen(objFilePath, "r"); // "r"은 읽기 모드를 나타냅니다.
+		ReadObj(file, vertex);
+		fclose(file);
+	}
 
 	hp = rand_hp(generator);
 
@@ -45,6 +56,10 @@ Enemy::Enemy(Shader& shaders) {
 	float random_x = distribution_x(generator);
 	float random_z = distribution_z(generator);
 
+	if(random_x < 1 && random_z <1) {
+		random_x = 4;
+	}
+
 	init_location = glm::vec3(random_x, 0, random_z);
 	transform = glm::translate(glm::mat4(1.0f), glm::vec3(random_x, 0, random_z)) *glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));
 
@@ -67,7 +82,8 @@ Enemy::Enemy(Shader& shaders) {
 }
 
 Enemy::~Enemy() {
-  
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 void Enemy::ReadObj(FILE* path, std::vector<Point>& vertexes) {

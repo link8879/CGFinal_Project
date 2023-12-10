@@ -11,9 +11,12 @@
 #include "grenade.h"
 #include "aabb.h"
 #include "collision.h"
+#include "soundManager.h"
 #include <algorithm>
 #include <vector>
+#include "gameManager.h"
 
+GameManager game_manager;
 GLfloat width, height;
 GLvoid Reshape(int w, int h);
 GLvoid draw();
@@ -21,10 +24,10 @@ Shader shader;
 Player player;
 Ground ground;
 std::vector<Bullet> bullets;
-std::vector<Grenade> grenades;
-Camera main_camera(glm::vec3(0,0,3),glm::vec3(0,0,0),glm::vec3(0,1,0));
-Camera minimap_camera(glm::vec3(0, 4, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));
+Camera main_camera(glm::vec3(0,2,-3),glm::vec3(0,0,0),glm::vec3(0,1,0));
+Camera minimap_camera(glm::vec3(0, 3, 0), glm::vec3(0, 0, 0),glm::vec3(0,0,1));
 Light light;
+SoundManager sound;
 std::vector<Enemy> enemies;
 void update(int value);
 GLvoid spawn_enemy(int value);
@@ -32,6 +35,10 @@ GLvoid spawn_enemy(int value);
 GLfloat player_rotate = 0.0f;
 GLfloat bullet_angle = 0.0f;
 int player_move = 0;
+
+bool change_view = false;
+bool game_over = false;
+int count = 0;
 
 void update();
 void Keyboard(unsigned char key, int x, int y);
@@ -58,6 +65,8 @@ void main(int argc, char** argv)
 
 	light.setLight(shader);
 	enemies.reserve(50);
+
+	sound.playBgm();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glutDisplayFunc(draw);
@@ -92,12 +101,21 @@ GLvoid draw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(shader.ID);
+	glm::mat4 pTransform = glm::mat4(1.0f);
 
 	glViewport(0, 0, width, height);
-	glm::mat4 pTransform = glm::mat4(1.0f);
-	pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
+	
+
+	if(change_view) {
+		minimap_camera.use();
+		pTransform = glm::ortho(-4.0, 4.0, -4.0, 4.0, -4.0, 4.0);
+	}
+	else {
+		main_camera.use();
+		pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
+	}
+	
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
-	main_camera.use();
 
 	player.draw();		
 
@@ -117,10 +135,18 @@ GLvoid draw()
 	ground.draw();
 
 	glViewport(width-200, height-200, 200, 200);
-	pTransform = glm::ortho(-5.0, 5.0, -5.0, 5.0, -5.0, 5.0);
-	//pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
+
+	if(change_view) {
+		float aspectRatio = 1.0f;
+		main_camera.use();
+		pTransform = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 200.0f);
+	}
+	else {
+		minimap_camera.use();
+		pTransform = glm::ortho(-4.0, 4.0, -4.0, 4.0, -4.0, 4.0);
+	}
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
-	minimap_camera.use();
+	
 
 	player.draw();		
 
@@ -148,17 +174,76 @@ void update(int value)
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
+	time_t times = time(0);
 
 	for(auto& enemy: enemies) {
-		enemy.t += deltaTime * 0.1;
-		enemy.update(enemy.t);
-		if(enemy.t >= 1.0) {
-			enemy.t = 1;
+		if(times - game_manager.getTime() > 30) {
+			enemy.t += deltaTime * 0.125;
+		}
+		else if(times - game_manager.getTime() > 120) {
+			enemy.t += deltaTime * 0.15;
+		}
+		else {
+			enemy.t += deltaTime * 0.1;
 		}
 
-		if (checkAABBCollision(enemy.calculateAABB(), player.calculateAABB())) {
-			std::cout << "ÇÃ·¹ÀÌ¾î »ç¸Á ¤»" << std::endl;
+		
+		enemy.update(enemy.t);
+	if(enemy.t >= 1.0) {
+		enemy.t = 1;
+		game_over = true;
+		
+		std::cout << times << std::endl;
+		std::cout << game_manager.getTime() << std::endl;
+		times = times - game_manager.getTime();
+		game_manager.setTime(times);
+		game_manager.printResult();
+	}
+	}
+
+	for (auto& bullet : bullets) {
+		bullet.update(deltaTime, player);
+
+		for (auto& enemy : enemies) {
+			if (checkAABBCollision(bullet.calculateAABB(), enemy.calculateAABB())) {
+				// Handle collision (e.g., reduce enemy health, remove bullet, etc.)
+				for (auto it = enemies.begin(); it != enemies.end(); /* no increment here */) {
+					if (checkAABBCollision(bullet.calculateAABB(), it->calculateAABB())) {
+						// Handle collision (e.g., reduce enemy health, remove bullet, etc.)
+						it->hp -= 1;
+
+						if (it->hp == 0) {
+							// If enemy's health is 0, erase the enemy
+							it = enemies.erase(it);
+							continue;  // Skip the increment since erase already moves the iterator
+						}
+
+						// Remove the bullet
+						// Assuming bullets is a vector of Bullet objects
+						bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
+							return &b == &bullet;  // Your condition to identify the bullet to remove
+							}), bullets.end());
+
+						count++;
+						game_manager.setScore(count);
+						game_manager.bullet_counter--;
+
+						// If you want to remove only one bullet, break out of the loop
+						break;
+					}
+
+					++it;  // Move to the next element
+				}
+			}
 		}
+
+		if(bullet.transform[3][0] > 5.0 || bullet.transform[3][2] > 5.0) {
+			bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
+				return &b == &bullet;  // Your condition to identify the bullet to remove
+				}), bullets.end());
+			game_manager.bullet_counter--;
+		}
+
 	}
 
 	for (auto& bullet : bullets) {
@@ -166,31 +251,31 @@ void update(int value)
 
 		bullet.update(deltaTime, player);
 
-		for (auto it = enemies.begin(); it != enemies.end(); /* ºñ¾îµÎ±â */) {
+		for (auto it = enemies.begin(); it != enemies.end(); /* ï¿½ï¿½ï¿½Î±ï¿½ */) {
 			if (checkAABBCollision(bullet.calculateAABB(), it->calculateAABB())) {
-				// Handle collision (e.g., Àû Ã¼·Â °¨¼Ò, ÃÑ¾Ë Á¦°Å, µîµî)
+				// Handle collision (e.g., ï¿½ï¿½ Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½Ñ¾ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½)
 				it->hp -= 1;
 
 				removeBullet = true;
 
-				// ÀûÀÇ Ã¼·ÂÀÌ 0ÀÌ¶ó¸é Å»Ãâ
+				// ï¿½ï¿½ï¿½ï¿½ Ã¼ï¿½ï¿½ï¿½ï¿½ 0ï¿½Ì¶ï¿½ï¿½ Å»ï¿½ï¿½
 				if (it->hp == 0) {
 					it = enemies.erase(it);
 					continue;
 				}
 
-				// Àû´ç ÇÑ ¹øÀÇ ÃÑ¾Ë Ãæµ¹ Ã¼Å© ÈÄ Å»Ãâ
+				// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ¾ï¿½ ï¿½æµ¹ Ã¼Å© ï¿½ï¿½ Å»ï¿½ï¿½
 				break;
 			}
 
-			// ´ÙÀ½ °´Ã¼·Î ÀÌµ¿
+			// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½Ìµï¿½
 			++it;
 		}
 
-		// Àû ·çÇÁ ¹Û¿¡¼­ ÃÑ¾Ë Á¦°Å
+		// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Û¿ï¿½ï¿½ï¿½ ï¿½Ñ¾ï¿½ ï¿½ï¿½ï¿½ï¿½
 		if (removeBullet) {
 			bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
-				return &b == &bullet;  // Á¦°ÅÇÒ ÃÑ¾Ë ½Äº°
+				return &b == &bullet;  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ¾ï¿½ ï¿½Äºï¿½
 				}), bullets.end());
 		}
 	}
@@ -206,7 +291,9 @@ void update(int value)
 	}
 
 	glutPostRedisplay();
-	glutTimerFunc(1, update, 1);
+	if(!game_over) {
+		glutTimerFunc(1, update, 1);
+	}
 }
 
 void Keyboard(unsigned char key, int x, int y)
@@ -261,9 +348,25 @@ void Keyboard(unsigned char key, int x, int y)
 		bullets.push_back(Bullet(shader,player));
 		std::cout << bullets.size() << std::endl;
 		break;
+		if(game_manager.bullet_counter < 15) {
+			bullets.push_back(Bullet(shader, player));
+			std::cout << bullets.size() << std::endl;
+			bang = true;
+			sound.playShooting();
+			game_manager.bullet_counter++;
+		}
 
 	case 'a':
 		grenades.push_back(Grenade(shader, player));
+		break;
+	case 'r':
+		if(!change_view) {
+			change_view = true;
+		}
+		else {
+			change_view = false;
+		}
+		
 		break;
 	}
 

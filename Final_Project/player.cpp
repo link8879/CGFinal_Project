@@ -8,7 +8,7 @@
 Player::Player()
 {
 	const char* objFilePath = "player.obj";
-	FILE* file = fopen(objFilePath, "r"); // "r"�� �б� ��带 ��Ÿ���ϴ�.
+	FILE* file = fopen(objFilePath, "r"); 
 	ReadObj(file, vertex);
 	fclose(file);
 
@@ -72,7 +72,6 @@ void Player::ReadObj(FILE* path, std::vector<Point>& vertexes)
 		}
 	}
 
-	// �ʿ��� ��� �о�� ���� ���� ���� � ����
 	for (int i = 0; i < faces.size(); ++i) {
 		vertexes.push_back(Point(vertices[faces[i].x].x, vertices[faces[i].x].y, vertices[faces[i].x].z, normals[normalData[i].x].x, normals[normalData[i].x].y, normals[normalData[i].x].z));
 		vertexes.push_back(Point(vertices[faces[i].y].x, vertices[faces[i].y].y, vertices[faces[i].y].z, normals[normalData[i].y].x, normals[normalData[i].y].y, normals[normalData[i].y].z));
@@ -81,15 +80,15 @@ void Player::ReadObj(FILE* path, std::vector<Point>& vertexes)
 }
 void Player::initialize()
 {
-	glGenVertexArrays(1, &VAO); //--- VAO �� �����ϰ� �Ҵ��ϱ�
-	glBindVertexArray(VAO); //--- VAO�� ���ε��ϱ�
+	glGenVertexArrays(1, &VAO); 
+	glBindVertexArray(VAO); 
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(Point), vertex.data(), GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(0); // Enable �ʼ�! ����ϰڴ� �ǹ�
+	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Point), (void*)offsetof(struct Point, x));
@@ -103,12 +102,10 @@ void Player::draw()
 {
 	glBindVertexArray(VAO);
 
-	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); //--- object Color�� ����: (1.0, 0.5, 0.3)�� ��
+	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor");
 	glUniform3f(objColorLocation, color.x, color.y, color.z);
 
-	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- ���ؽ� ���̴����� ���� ��ȯ ��� �������� �޾ƿ´�.
-
-	
+	int modelLoc = glGetUniformLocation(shader.ID, "model");
 	
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &transform[0][0]);
 
