@@ -36,7 +36,7 @@ GLfloat bullet_angle = 0.0f;
 int player_move = 0;
 bool bang = false;
 
-
+bool change_view = false;
 
 void update();
 void Keyboard(unsigned char key, int x, int y);
@@ -103,9 +103,17 @@ GLvoid draw()
 
 	glViewport(0, 0, width, height);
 	glm::mat4 pTransform = glm::mat4(1.0f);
-	pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
+
+	if(change_view) {
+		minimap_camera.use();
+		pTransform = glm::ortho(-4.0, 4.0, -4.0, 4.0, -4.0, 4.0);
+	}
+	else {
+		main_camera.use();
+		pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
+	}
+	
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
-	main_camera.use();
 
 	player.draw();		
 
@@ -121,9 +129,17 @@ GLvoid draw()
 	ground.draw();
 
 	glViewport(width-200, height-200, 200, 200);
-	pTransform = glm::ortho(-4.0, 4.0, -4.0, 4.0, -4.0, 4.0);
+
+	if(change_view) {
+		main_camera.use();
+		pTransform = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.1f, 200.0f);
+	}
+	else {
+		minimap_camera.use();
+		pTransform = glm::ortho(-4.0, 4.0, -4.0, 4.0, -4.0, 4.0);
+	}
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, &pTransform[0][0]);
-	minimap_camera.use();
+	
 
 	player.draw();		
 
@@ -224,8 +240,13 @@ void Keyboard(unsigned char key, int x, int y)
 		sound.playShooting();
 		break;
 	case 'r':
-		game_manager.setScore(10);
-		game_manager.printResult();
+		if(!change_view) {
+			change_view = true;
+		}
+		else {
+			change_view = false;
+		}
+		
 		break;
 	}
 
