@@ -8,18 +8,18 @@
 Bullet::Bullet(Shader& shaders,Player player)
 {
 	const char* objFilePath = "bullet.obj";
-	FILE* file = fopen(objFilePath, "r"); // "r"�� �б� ��带 ��Ÿ���ϴ�.
+	FILE* file = fopen(objFilePath, "r"); 
 	ReadObj(file, vertex);
 	fclose(file);
 
 	shader = shaders;
-	color.x = 0.2;
-	color.y = 0.2;
-	color.z = 1.0;
+	color.x = 1;
+	color.y = 1;
+	color.z = 0;
 	transform = glm::mat4(1.0f);
 	init_transform = player.transform;
-	glGenVertexArrays(1, &VAO); //--- VAO �� �����ϰ� �Ҵ��ϱ�
-	glBindVertexArray(VAO); //--- VAO�� ���ε��ϱ�
+	glGenVertexArrays(1, &VAO); 
+	glBindVertexArray(VAO); 
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -85,7 +85,7 @@ void Bullet::ReadObj(FILE* path, std::vector<Point>& vertexes)
 		}
 	}
 
-	// �ʿ��� ��� �о�� ���� ���� ���� � ����
+	
 	for (int i = 0; i < faces.size(); ++i) {
 		vertexes.push_back(Point(vertices[faces[i].x].x, vertices[faces[i].x].y, vertices[faces[i].x].z, normals[normalData[i].x].x, normals[normalData[i].x].y, normals[normalData[i].x].z));
 		vertexes.push_back(Point(vertices[faces[i].y].x, vertices[faces[i].y].y, vertices[faces[i].y].z, normals[normalData[i].y].x, normals[normalData[i].y].y, normals[normalData[i].y].z));
@@ -97,10 +97,10 @@ void Bullet::draw()
 {
 	glBindVertexArray(VAO);
 
-	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); //--- object Color�� ����: (1.0, 0.5, 0.3)�� ��
+	int objColorLocation = glGetUniformLocation(shader.ID, "objectColor"); 
 	glUniform3f(objColorLocation, color.x, color.y, color.z);
 
-	int modelLoc = glGetUniformLocation(shader.ID, "model"); //--- ���ؽ� ���̴����� ���� ��ȯ ��� �������� �޾ƿ´�.
+	int modelLoc = glGetUniformLocation(shader.ID, "model"); 
 
 	
 
@@ -116,7 +116,7 @@ void Bullet::update(float deltaTime, Player player)
 	glm::vec3 bulletDirection = glm::normalize(glm::vec3(init_transform * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f)));
 	bulletPos += bulletDirection * bulletSpeed * deltaTime;
 
-	transform = glm::translate(glm::mat4(1.0f), bulletPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));;
+	transform = glm::translate(glm::mat4(1.0f), bulletPos) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25, 0.25, 0.25));;
 }
 
 AABB Bullet::calculateAABB() const {
@@ -124,11 +124,11 @@ AABB Bullet::calculateAABB() const {
 	glm::vec3 bulletMax = bulletPos + glm::vec3(1.0f);
 	return AABB(bulletMin, bulletMax);*/
 
-	float scaleFactor = 0.5f;
+	float scaleFactor = 0.25f;
 
 	glm::vec3 scaledSize = glm::vec3(1.0f) * scaleFactor;
 
-	glm::vec3 halfExtents = scaledSize * 0.5f;
+	glm::vec3 halfExtents = scaledSize * 0.25f;
 
 	glm::vec3 bulletMin = bulletPos - halfExtents;
 	glm::vec3 bulletMax = bulletPos + halfExtents;

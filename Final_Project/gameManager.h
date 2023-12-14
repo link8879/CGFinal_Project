@@ -15,7 +15,7 @@ public:
 	time_t getTime();
 
 	void setScore(int score);
-	void setTime(float time);
+	void setTime(time_t time);
 
 	void printResult();
 };

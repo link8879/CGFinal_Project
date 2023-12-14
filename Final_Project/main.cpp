@@ -47,6 +47,7 @@ bool remove_grenade = false;
 bool change_view = false;
 bool game_over = false;
 bool bang = false;
+bool nuclear = false;
 int scores = 0;
 void update();
 void Keyboard(unsigned char key, int x, int y);
@@ -95,17 +96,8 @@ GLvoid spawn_enemy(int value) {
 	enemies.push_back(Enemy(shader));
 
 	glutPostRedisplay();
-	if(!game_over && scores < 15) {
-		glutTimerFunc(5000, spawn_enemy, 1);
-	}
-	else if(!game_over && scores < 20) {
-		glutTimerFunc(2500, spawn_enemy, 1);
-	}
-	else if(!game_over && scores < 50) {
+	if(!game_over) {
 		glutTimerFunc(2000, spawn_enemy, 1);
-	}
-	else if(!game_over && scores > 70) {
-		glutTimerFunc(1500, spawn_enemy, 1);
 	}
 }
 
@@ -158,6 +150,7 @@ GLvoid draw()
 
 	ground.draw();
 
+	glClear(GL_DEPTH_BUFFER_BIT);
 	glViewport(width-200, height-200, 200, 200);
 
 	if(change_view) {
@@ -193,7 +186,7 @@ GLvoid draw()
 
 	glutSwapBuffers();
 }
-
+time_t times = time(0);
 void update(int value)
 {
 
@@ -201,35 +194,30 @@ void update(int value)
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
-	time_t times = time(0);
-
+	times = time(0);
 	for(auto& enemy: enemies) {
-		if(times - game_manager.getTime() > 30) {
-			enemy.t += deltaTime * 0.125;
+		if(times - game_manager.getTime() < 20) {
+			enemy.t += deltaTime * 0.1;
+			
 		}
-		else if(times - game_manager.getTime() > 120) {
+		else if(times - game_manager.getTime() < 60) {
 			enemy.t += deltaTime * 0.15;
+			
 		}
 		else {
-			enemy.t += deltaTime * 0.1;
+			enemy.t += deltaTime * 0.2;
+			
 		}
 
 		
 		enemy.update(enemy.t);
-		if (enemy.t >= 0.9) {
-			enemy.t = 0.9;
-			//game_over = true;
-
-			std::cout << times << std::endl;
-			std::cout << game_manager.getTime() << std::endl;
-			times = times - game_manager.getTime();
-			game_manager.setTime(times);
-			game_manager.printResult();
-		}
 
 		if (checkAABBCollision(enemy.calculateAABB(), player.calculateAABB())) {
 			game_over = true;
-			std::cout << "you died" << std::endl;
+			times = times - game_manager.getTime();
+			game_manager.setTime(times);
+			
+			game_manager.printResult();
 		}
 	}
 
@@ -244,10 +232,12 @@ void update(int value)
 
 				removeBullet = true;
 
-				std::cout << "crash" << std::endl;
+
 
 				if (it->hp == 0) {
 					it = enemies.erase(it);
+					scores++;
+					game_manager.setScore(scores);
 					continue;
 				}
 
@@ -260,8 +250,7 @@ void update(int value)
 			bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [&](const Bullet& b) {
 				return &b == &bullet;  
 				}), bullets.end());
-			scores++;
-			game_manager.setScore(scores);
+			
 		}
 
 		if (bullet.transform[3][0] > 5.0 || bullet.transform[3][2] > 5.0) {
@@ -279,17 +268,18 @@ void update(int value)
 
 		if (grenade.grenade_y <= -3.0 && grenade.is_boom) {
 			booms.push_back(Boom(grenade.transform[3][0], grenade.transform[3][2]));
-
+			sound.playboom();
+			grenade.is_boom = false;
 			for (auto& boom : booms) {
 				for (auto it = enemies.begin(); it != enemies.end();) {
 					if (checkAABBCollision(boom.calculateAABB(), it->calculateAABB())) {
 						it->hp -= 1;
-
-						grenade.is_boom = false;
-						std::cout << "Boom!" << std::endl;
+						
 
 						if (it->hp == 0) {
 							it = enemies.erase(it);
+							scores++;
+							game_manager.setScore(scores);
 							continue;
 						}
 
@@ -314,7 +304,7 @@ void update(int value)
 void Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
-	case'q':
+	case'a':
 		player_rotate = 5.0f;
 		bullet_angle += player_rotate;
 
@@ -334,7 +324,7 @@ void Keyboard(unsigned char key, int x, int y)
 		main_camera.camera_trasform = glm::lookAt(main_camera.eye, main_camera.at, main_camera.up) * glm::rotate(glm::mat4(1.0f), glm::radians(-bullet_angle), glm::vec3(0.0, 1.0, 0.0));
 		break;
 
-	case 'e':
+	case 'd':
 	{
 		player_rotate = -5.0f;
 		bullet_angle += player_rotate;
@@ -360,15 +350,14 @@ void Keyboard(unsigned char key, int x, int y)
 	case 32:		//space
 
 		bullets.push_back(Bullet(shader, player));
-		std::cout << bullets.size() << std::endl;
 		bang = true;
 		sound.playShooting();
 		game_manager.bullet_counter++;
 		
 		break;
 
-	case 'a':
-		if (game_manager.grenade_counter > 0) {
+	case 'q':
+		if (game_manager.grenade_counter >= 0) {
 			grenades.push_back(Grenade(shader, player));
 			std::cout << "grenade: " << game_manager.grenade_counter << std::endl;
 			game_manager.grenade_counter--;
@@ -384,14 +373,32 @@ void Keyboard(unsigned char key, int x, int y)
 		
 		break;
 	case 'o':
-		enemies.clear();
-		bullets.clear();
-		game_over = false;
-		scores = 0;
-		game_manager.setScore(scores);
-		game_manager.setTime(time(0));
-		glutTimerFunc(5000, spawn_enemy, 1);
-		glutTimerFunc(1, update, 1);
+		if(game_over) {
+			enemies.clear();
+			bullets.clear();
+			game_over = false;
+			scores = 0;
+			game_manager.setScore(scores);
+			game_manager.setTime(time(0));
+			times = time(0);
+			game_manager.grenade_counter = 5;
+			glutTimerFunc(5000, spawn_enemy, 1);
+			glutTimerFunc(1, update, 1);
+			nuclear = false;
+			sound.playBgm();
+		}
+		
+		break;
+	case 'w':
+		if(!nuclear) {
+			int temp = enemies.size();
+			scores +=temp;
+			game_manager.setScore(scores);
+			enemies.clear();
+			nuclear = true;
+			std::cout << "Nuclear bomb" << std::endl;
+		}
+			
 		break;
 	}
 

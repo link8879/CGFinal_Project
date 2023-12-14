@@ -9,7 +9,6 @@ GameManager::GameManager()
 	time_ = time(0);
 	setScore(0);
 	bullet_counter = 0;
-	std::cout << time_;
 	grenade_counter = 5;
 }
 GameManager::~GameManager()
@@ -22,7 +21,7 @@ void GameManager::setScore(int scores)
 	score = scores;
 }
 
-void GameManager::setTime(float times)
+void GameManager::setTime(time_t times)
 {
 	time_ = times;
 }
