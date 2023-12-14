@@ -187,10 +187,11 @@ GLvoid draw()
 	glutSwapBuffers();
 }
 time_t times = time(0);
+int lastTime = glutGet(GLUT_ELAPSED_TIME);
+
 void update(int value)
 {
 
-	static int lastTime = glutGet(GLUT_ELAPSED_TIME);
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	float deltaTime = (currentTime - lastTime) / 1000.0f;
 	lastTime = currentTime;
@@ -262,7 +263,7 @@ void update(int value)
 
 	// grenade and create boom
 	for (auto& grenade : grenades) {
-		grenade.grenade_y -= 0.01;
+		grenade.grenade_y -= 5 * deltaTime;
 
 		grenade.update(deltaTime, player, grenade.grenade_y);
 
